@@ -262,7 +262,49 @@ bot.deleteWebHook({ drop_pending_updates: true })
 console.log("RWA NFT FI Bot is running...");
 
 const http = require("http");
+const url = require("url");
 const PORT = process.env.PORT || 3000;
-http.createServer((req, res) => res.end("OK")).listen(PORT, () => {
+
+http.createServer(async (req, res) => {
+  // Health check
+  if (req.method === "GET") {
+    res.writeHead(200);
+    return res.end("OK");
+  }
+
+  // SendPulse webhook endpoint
+  if (req.method === "POST" && url.parse(req.url).pathname === "/vera") {
+    let body = "";
+    req.on("data", chunk => body += chunk);
+    req.on("end", async () => {
+      try {
+        const data = JSON.parse(body);
+        const userId = "sp_" + (data.user_id || data.subscriber_id || "unknown");
+        const userMessage = data.message || data.text || "";
+        const lang = detectLang(userMessage);
+        const refLink = getRefLink(lang);
+
+        if (!userMessage) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          return res.end(JSON.stringify({ error: "No message provided" }));
+        }
+
+        const reply = await askClaude(userId, userMessage, refLink);
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ text: reply }));
+      } catch (err) {
+        console.error("SendPulse webhook error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Internal error" }));
+      }
+    });
+    return;
+  }
+
+  res.writeHead(404);
+  res.end("Not found");
+
+}).listen(PORT, () => {
   console.log(`HTTP server listening on port ${PORT}`);
 });
