@@ -3,7 +3,6 @@ const TelegramBot = require("node-telegram-bot-api");
 const Anthropic = require("@anthropic-ai/sdk");
 const http = require("http");
 
-// Важно: polling отключен. Бот работает в режиме Webhook + API
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -25,7 +24,7 @@ const REF_LINKS = {
   zh: 'https://app.rwanftfi.com/?ref=KorzhTRAFF',
   es: 'https://app.rwanftfi.com/?ref=KorzhTRAFF',
   fr: 'https://app.rwanftfi.com/?ref=KorzhTRAFF',
-  pt: 'https://app.rwanftfi.com/?ref=Korvanftfi.com/?ref=KorzhTRAFF',
+  pt: 'https://app.rwanftfi.com/?ref=KorzhTRAFF',
   it: 'https://app.rwanftfi.com/?ref=PereudaDS',
   fil: 'https://app.rwanftfi.com/?ref=PereudaDS',
   tr: 'https://app.rwanftfi.com/?ref=PereudaDS',
@@ -72,10 +71,15 @@ function isRegQuestion(text) {
   return REG_KEYWORDS.some(kw => t.includes(kw));
 }
 
-const SYSTEM_PROMPT = `You are Vera — AI assistant of the RWA NFT FI ecosystem on Binance Smart Chain.
+const SYSTEM_PROMPT = `You are Vera — human-like support assistant of the RWA NFT FI ecosystem on Binance Smart Chain.
 
-LANGUAGE RULE (CRITICAL):
-Always reply in the EXACT same language the user used. Never switch languages.
+HUMAN-LIKE STYLE RULES WITH BOLD TEXT (CRITICAL):
+- Write naturally, like a real person in a chat. 
+- Use ONLY double asterisks (**word**) to make key points, main metrics, or crucial numbers bold.
+- NEVER use hashtags (##, ###) for titles. Never write titles at all.
+- NEVER use markdown separators like '---' or excessive robotic lists.
+- Write in casual, neat paragraphs. Keep it clean, direct, and concise.
+- Always reply in the EXACT same language the user used. Never switch languages.
 
 CRITICAL FACTS — ONLY ANSWER BASED ON THESE. NEVER INVENT OR ASSUME:
 
@@ -162,7 +166,6 @@ Always use this exact link when mentioning the platform or registration.`;
   return reply;
 }
 
-// Выносим обработчик сообщений в отдельную функцию, чтобы вызывать её и из вебхука, и из API
 async function processIncomingMessage(userId, chatId, userText, msgObjectForForwarding = null) {
   const cleanText = userText.replace(/@\w+/g, "").trim();
   const text = cleanText || userText;
@@ -177,24 +180,24 @@ async function processIncomingMessage(userId, chatId, userText, msgObjectForForw
     }
 
     const greetings = {
-      ru: `Привет${name ? ", " + name : ""}! Я Вера — ИИ-ассистент платформы RWA NFT FI.\n\nОтправляю тебе пошаговую инструкцию по регистрации`,
-      en: `Hi${name ? ", " + name : ""}! I'm Vera — AI assistant of RWA NFT FI platform.\n\nHere's your step-by-step registration guide`,
-      de: `Hallo${name ? ", " + name : ""}! Ich bin Vera — KI-Assistentin der RWA NFT FI Plattform.\n\nHier ist deine Registrierungsanleitung`,
-      fr: `Bonjour${name ? ", " + name : ""}! Je suis Vera — assistante IA de RWA NFT FI.\n\nVoici votre guide d'inscription`,
-      es: `Hola${name ? ", " + name : ""}! Soy Vera — asistente IA de RWA NFT FI.\n\nAqui tienes tu guia de registro`,
-      pt: `Ola${name ? ", " + name : ""}! Sou Vera — assistente IA da RWA NFT FI.\n\nAqui esta seu guia de registro`,
-      it: `Ciao${name ? ", " + name : ""}! Sono Vera — assistente IA di RWA NFT FI.\n\nEcco la tua guida alla registrazione`,
-      zh: `你好${name ? name : ""}！我是Vera — RWA NFT FI平台的AI助手。\n\n这是您的注册指南`,
-      hi: `Namaste${name ? ", " + name : ""}! Main Vera hun — RWA NFT FI platform ki AI assistant.\n\nYahan aapka registration guide hai`,
-      tr: `Merhaba${name ? ", " + name : ""}! Ben Vera — RWA NFT FI platformunun AI asistaniyim.\n\nIste kayit rehberiniz`,
-      vi: `Xin chao${name ? ", " + name : ""}! Toi la Vera — tro ly AI cua nen tang RWA NFT FI.\n\nDay la huong dan dang ky cua ban`,
-      fil: `Kumusta${name ? ", " + name : ""}! Ako si Vera — AI assistant ng RWA NFT FI platform.\n\nNarito ang iyong gabay sa pagpaparehistro`,
+      ru: `Привет${name ? ", " + name : ""}! Я Вера, служба поддержки **RWA NFT FI**. Лови пошаговую инструкцию по регистрации:`,
+      en: `Hi${name ? ", " + name : ""}! I'm Vera from **RWA NFT FI** support. Here is your step-by-step registration guide:`,
+      de: `Hallo${name ? ", " + name : ""}! Ich bin Vera vom **RWA NFT FI** Support. Hier ist deine Registrierungsanleitung:`,
+      fr: `Bonjour${name ? ", " + name : ""}! Je suis Vera du support **RWA NFT FI**. Voici votre guide d'inscription:`,
+      es: `Hola${name ? ", " + name : ""}! Soy Vera del soporte de **RWA NFT FI**. Aquí tienes tu guía de registro:`,
+      pt: `Olá${name ? ", " + name : ""}! Sou Vera do suporte da **RWA NFT FI**. Aqui está seu guia de registro:`,
+      it: `Ciao${name ? ", " + name : ""}! Sono Vera del supporto **RWA NFT FI**. Ecco la tua guida alla registrazione:`,
+      zh: `你好${name ? name : ""}！我是 **RWA NFT FI** 团队 Support 的 Vera。这是您的注册指南：`,
+      hi: `Namaste${name ? ", " + name : ""}! Main **RWA NFT FI** support se Vera hun. Yahan aapka registration guide hai:`,
+      tr: `Merhaba${name ? ", " + name : ""}! Ben **RWA NFT FI** destek ekibinden Vera. İşte kayıt rehberiniz:`,
+      vi: `Xin chào${name ? ", " + name : ""}! Tôi là Vera từ đội ngũ hỗ trợ **RWA NFT FI**. Đây là hướng dẫn đăng ký của bạn:`,
+      fil: `Kumusta${name ? ", " + name : ""}! Ako si Vera mula sa **RWA NFT FI** support. Narito ang iyong gabay sa pagpaparehistro:`,
     };
 
     const refLink = getRefLink(lang);
     const greeting = (greetings[lang] || greetings["en"]) + `\n\n🔗 ${refLink}`;
     
-    const sendOptions = { parse_mode: "Markdown" };
+    const sendOptions = { parse_mode: "Markdown" }; 
     if (msgObjectForForwarding && msgObjectForForwarding.message_id) {
       sendOptions.reply_to_message_id = msgObjectForForwarding.message_id;
     }
@@ -222,25 +225,22 @@ async function processIncomingMessage(userId, chatId, userText, msgObjectForForw
   return await askClaude(userId, text, refLink);
 }
 
-// Привязываем обработчик для интеграции через Webhook (для группы напрямую)
 bot.on("message", async (msg) => {
   if (!msg.text || msg.text.startsWith("/")) return;
   bot.sendChatAction(msg.chat.id, "typing");
   
   const reply = await processIncomingMessage(msg.from.id, msg.chat.id, msg.text.trim(), msg);
   if (reply) {
-    const sendOptions = { reply_to_message_id: msg.message_id, parse_mode: "Markdown" };
+    const sendOptions = { reply_to_message_id: msg.message_id, parse_mode: "Markdown" }; 
     if (msg.message_thread_id) sendOptions.message_thread_id = msg.message_thread_id;
     bot.sendMessage(msg.chat.id, reply, sendOptions);
   }
 });
 
-// ЕДИНЫЙ ВЕБ-СЕРВЕР ДЛЯ ВСЕХ ЗАДАЧ
 const PORT = process.env.PORT || 3000;
 const RENDER_URL = "https://verkaassistantbot-b0uq.onrender.com";
 
 http.createServer((req, res) => {
-  // 1. Фикс для Uptime Robot (GET и HEAD)
   if (req.url === "/" || req.url === "") {
     if (req.method === "GET" || req.method === "HEAD") {
       res.writeHead(200, { "Content-Type": "text/plain", "Connection": "close" });
@@ -249,7 +249,6 @@ http.createServer((req, res) => {
     }
   }
 
-  // 2. Роут Webhook для Группы (принимает POST-запросы напрямую от Telegram)
   if (req.url === `/bot${process.env.TELEGRAM_BOT_TOKEN}` && req.method === "POST") {
     let body = "";
     req.on("data", chunk => { body += chunk; });
@@ -266,7 +265,6 @@ http.createServer((req, res) => {
     return;
   }
 
-  // 3. Универсальный POST-роут для SendPulse API
   if (req.method === "POST") {
     let body = "";
     req.on("data", chunk => { body += chunk; });
@@ -303,7 +301,6 @@ http.createServer((req, res) => {
 }).listen(PORT, async () => {
   console.log(`Server listening on port ${PORT}`);
   try {
-    // Включаем вебхук в Telegram для прямой работы в группе
     const webhookUrl = `${RENDER_URL}/bot${process.env.TELEGRAM_BOT_TOKEN}`;
     await bot.setWebHook(webhookUrl, { drop_pending_updates: true });
     console.log(`Webhook successfully set to: ${webhookUrl}`);
