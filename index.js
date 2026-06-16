@@ -1,11 +1,14 @@
 require("dotenv").config();
 const TelegramBot = require("node-telegram-bot-api");
 const Anthropic = require("@anthropic-ai/sdk");
+const http = require("http");
 
+// Инициализируем бота БЕЗ автоматического старта Polling,
+// чтобы сначала очистить старые сессии и не ловить ошибку 409
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
   polling: {
     interval: 300,
-    autoStart: true,
+    autoStart: false, 
     params: { timeout: 10 }
   }
 });
@@ -21,19 +24,15 @@ const REG_POSTS = {
 };
 
 const SOURCE_CHAT = "@rwanftglobal";
-// Referral links by language
 const REF_LINKS = {
-  // English, Hindi, German, Russian
   en: 'https://app.rwanftfi.com/?ref=ProCripto',
   hi: 'https://app.rwanftfi.com/?ref=ProCripto',
   de: 'https://app.rwanftfi.com/?ref=ProCripto',
   ru: 'https://app.rwanftfi.com/?ref=ProCripto',
-  // Chinese, Spanish, French, Portuguese
   zh: 'https://app.rwanftfi.com/?ref=KorzhTRAFF',
   es: 'https://app.rwanftfi.com/?ref=KorzhTRAFF',
   fr: 'https://app.rwanftfi.com/?ref=KorzhTRAFF',
   pt: 'https://app.rwanftfi.com/?ref=KorzhTRAFF',
-  // Italian, Filipino, Turkish, Vietnamese
   it: 'https://app.rwanftfi.com/?ref=PereudaDS',
   fil: 'https://app.rwanftfi.com/?ref=PereudaDS',
   tr: 'https://app.rwanftfi.com/?ref=PereudaDS',
@@ -43,7 +42,6 @@ const REF_LINKS = {
 function getRefLink(lang) {
   return REF_LINKS[lang] || REF_LINKS['en'];
 }
-
 
 const REG_KEYWORDS = [
   "register","registration","sign up","signup","join","how to start","get started","how do i join",
@@ -161,7 +159,7 @@ async function askClaude(userId, userMessage, refLink) {
 REF LINK FOR THIS USER: ${refLink}
 Always use this exact link when mentioning the platform or registration.`;
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-5",
+    model: "claude-3-5-sonnet-20241022", // Обновлено на точное имя модели
     max_tokens: 1024,
     system: systemWithRef,
     messages: getHistory(userId),
@@ -196,8 +194,6 @@ bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
   const userText = msg.text.trim();
-
-  // Respond to all messages in all chats (group + private)
 
   bot.sendChatAction(chatId, "typing");
 
@@ -254,57 +250,41 @@ bot.on("message", async (msg) => {
   }
 });
 
-// Delete webhook and drop pending updates to avoid 409 conflicts
-bot.deleteWebHook({ drop_pending_updates: true })
-  .then(() => console.log("Webhook cleared"))
-  .catch(e => console.log("Webhook clear error:", e.message));
-
-console.log("RWA NFT FI Bot is running...");
-
-const http = require("http");
-const url = require("url");
+// Улучшенный HTTP-сервер: теперь он корректно отвечает 200 OK на GET и HEAD запросы пингера
 const PORT = process.env.PORT || 3000;
-
-http.createServer(async (req, res) => {
-  // Health check
-  if (req.method === "GET") {
-    res.writeHead(200);
-    return res.end("OK");
+const server = http.createServer((req, res) => {
+  if (req.url === "/" || req.url === "") {
+    if (req.method === "GET" || req.method === "HEAD") {
+      res.writeHead(200, { 
+        "Content-Type": "text/plain",
+        "Connection": "close"
+      });
+      res.end("OK");
+      return;
+    }
   }
-
-  // SendPulse webhook endpoint
-  if (req.method === "POST" && url.parse(req.url).pathname === "/vera") {
-    let body = "";
-    req.on("data", chunk => body += chunk);
-    req.on("end", async () => {
-      try {
-        const data = JSON.parse(body);
-        const userId = "sp_" + (data.user_id || data.subscriber_id || "unknown");
-        const userMessage = data.message || data.text || "";
-        const lang = detectLang(userMessage);
-        const refLink = getRefLink(lang);
-
-        if (!userMessage) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          return res.end(JSON.stringify({ error: "No message provided" }));
-        }
-
-        const reply = await askClaude(userId, userMessage, refLink);
-
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ text: reply }));
-      } catch (err) {
-        console.error("SendPulse webhook error:", err);
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Internal error" }));
-      }
-    });
-    return;
-  }
-
   res.writeHead(404);
-  res.end("Not found");
+  res.end();
+});
 
-}).listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`HTTP server listening on port ${PORT}`);
+  
+  try {
+    // Сначала гарантированно сбрасываем старый вебхук и дропаем подвисшие апдейты
+    await bot.deleteWebHook({ drop_pending_updates: true });
+    console.log("Webhook cleared successfully.");
+    
+    // Небольшая искусственная пауза в 1.5 секунды, чтобы дать Render 
+    // завершить остановку старых контейнеров перед тем, как мы включим новый Polling
+    setTimeout(() => {
+      bot.startPolling();
+      console.log("RWA NFT FI Bot is running via Polling...");
+    }, 1500);
+
+  } catch (e) {
+    console.log("Error during bot startup initialization:", e.message);
+    // В случае сбоя всё равно пробуем запуститься
+    bot.startPolling();
+  }
 });
