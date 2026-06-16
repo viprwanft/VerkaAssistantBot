@@ -3,15 +3,8 @@ const TelegramBot = require("node-telegram-bot-api");
 const Anthropic = require("@anthropic-ai/sdk");
 const http = require("http");
 
-// Инициализируем бота БЕЗ автоматического старта Polling,
-// чтобы сначала очистить старые сессии и не ловить ошибку 409
-const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
-  polling: {
-    interval: 300,
-    autoStart: false, 
-    params: { timeout: 10 }
-  }
-});
+// Инициализация бота СТРОГО без polling. Бот будет работать через Webhook.
+const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const histories = new Map();
@@ -24,6 +17,7 @@ const REG_POSTS = {
 };
 
 const SOURCE_CHAT = "@rwanftglobal";
+// Referral links by language
 const REF_LINKS = {
   en: 'https://app.rwanftfi.com/?ref=ProCripto',
   hi: 'https://app.rwanftfi.com/?ref=ProCripto',
@@ -79,7 +73,7 @@ function isRegQuestion(text) {
   return REG_KEYWORDS.some(kw => t.includes(kw));
 }
 
-const SYSTEM_PROMPT = `You are Vera — AI assistant of the RWA NFT FI ecosystem on Binance Smart Chain.
+const SYSTEM_PROMPT = `You are Vera — AI assistant of the TitanFi ecosystem on Binance Smart Chain.
 
 LANGUAGE RULE (CRITICAL):
 Always reply in the EXACT same language the user used. Never switch languages.
@@ -159,7 +153,7 @@ async function askClaude(userId, userMessage, refLink) {
 REF LINK FOR THIS USER: ${refLink}
 Always use this exact link when mentioning the platform or registration.`;
   const response = await anthropic.messages.create({
-    model: "claude-3-5-sonnet-20241022", // Обновлено на точное имя модели
+    model: "claude-3-5-sonnet-20241022",
     max_tokens: 1024,
     system: systemWithRef,
     messages: getHistory(userId),
@@ -172,13 +166,13 @@ Always use this exact link when mentioning the platform or registration.`;
 bot.onText(/\/start/, (msg) => {
   const name = msg.from.first_name || "";
   bot.sendMessage(msg.chat.id,
-    `Привет${name ? ", " + name : ""}! I'm Vera — AI assistant of RWA NFT FI platform.\n\nAsk me anything in your language — I'll reply in the same language.\n\nWrite your question below!`
+    `Привет${name ? ", " + name : ""}! I'm Vera — AI assistant of TitanFi platform.\n\nAsk me anything in your language — I'll reply in the same language.\n\nWrite your question below!`
   );
 });
 
 bot.onText(/\/help/, (msg) => {
   bot.sendMessage(msg.chat.id,
-    `*Vera Assistant — RWA NFT FI*\n\nI can help with:\n- How NFTs work\n- Smart loans (Lending)\n- Token DA & mining\n- Network marketing (22 levels)\n- CertiK audit & security\n- How to register\n\nI reply in your language automatically.\n\nhttps://app.rwanftfi.com/?ref=ProCripto`,
+    `*Vera Assistant — TitanFi*\n\nI can help with:\n- How NFTs work\n- Smart loans (Lending)\n- Token DA & mining\n- Network marketing (22 levels)\n- CertiK audit & security\n- How to register\n\nI reply in your language automatically.\n\nhttps://app.rwanftfi.com/?ref=ProCripto`,
     { parse_mode: "Markdown" }
   );
 });
@@ -192,99 +186,4 @@ bot.on("message", async (msg) => {
   if (!msg.text || msg.text.startsWith("/")) return;
 
   const chatId = msg.chat.id;
-  const userId = msg.from.id;
-  const userText = msg.text.trim();
-
-  bot.sendChatAction(chatId, "typing");
-
-  const sendOptions = { reply_to_message_id: msg.message_id, parse_mode: "Markdown" };
-  if (msg.message_thread_id) sendOptions.message_thread_id = msg.message_thread_id;
-
-  try {
-    const cleanText = userText.replace(/@\w+/g, "").trim();
-    const text = cleanText || userText;
-
-    if (isRegQuestion(text)) {
-      const lang = detectLang(text);
-      const postId = REG_POSTS[lang] || REG_POSTS["en"];
-      const name = msg.from.first_name || "";
-
-      const greetings = {
-        ru: `Привет${name ? ", " + name : ""}! Я Вера — ИИ-ассистент платформы RWA NFT FI.\n\nОтправляю тебе пошаговую инструкцию по регистрации`,
-        en: `Hi${name ? ", " + name : ""}! I'm Vera — AI assistant of RWA NFT FI platform.\n\nHere's your step-by-step registration guide`,
-        de: `Hallo${name ? ", " + name : ""}! Ich bin Vera — KI-Assistentin der RWA NFT FI Plattform.\n\nHier ist deine Registrierungsanleitung`,
-        fr: `Bonjour${name ? ", " + name : ""}! Je suis Vera — assistante IA de RWA NFT FI.\n\nVoici votre guide d'inscription`,
-        es: `Hola${name ? ", " + name : ""}! Soy Vera — asistente IA de RWA NFT FI.\n\nAqui tienes tu guia de registro`,
-        pt: `Ola${name ? ", " + name : ""}! Sou Vera — assistente IA da RWA NFT FI.\n\nAqui esta seu guia de registro`,
-        it: `Ciao${name ? ", " + name : ""}! Sono Vera — assistente IA di RWA NFT FI.\n\nEcco la tua guida alla registrazione`,
-        zh: `你好${name ? name : ""}！我是Vera — RWA NFT FI平台的AI助手。\n\n这是您的注册指南`,
-        hi: `Namaste${name ? ", " + name : ""}! Main Vera hun — RWA NFT FI platform ki AI assistant.\n\nYahan aapka registration guide hai`,
-        tr: `Merhaba${name ? ", " + name : ""}! Ben Vera — RWA NFT FI platformunun AI asistaniyim.\n\nIste kayit rehberiniz`,
-        vi: `Xin chao${name ? ", " + name : ""}! Toi la Vera — tro ly AI cua nen tang RWA NFT FI.\n\nDay la huong dan dang ky cua ban`,
-        fil: `Kumusta${name ? ", " + name : ""}! Ako si Vera — AI assistant ng RWA NFT FI platform.\n\nNarito ang iyong gabay sa pagpaparehistro`,
-      };
-
-      const refLink = getRefLink(lang);
-      const greeting = (greetings[lang] || greetings["en"]) + `
-
-🔗 ${refLink}`;
-      await bot.sendMessage(chatId, greeting, sendOptions);
-      await new Promise(r => setTimeout(r, 800));
-
-      try {
-        await bot.forwardMessage(chatId, SOURCE_CHAT, postId, { message_thread_id: msg.message_thread_id });
-      } catch (fwdErr) {
-        console.error("Forward error:", fwdErr.message);
-        await bot.sendMessage(chatId, `Registration link: ${refLink}`, sendOptions);
-      }
-      return;
-    }
-
-    const refLink = getRefLink(detectLang(text));
-    const reply = await askClaude(userId, text, refLink);
-    bot.sendMessage(chatId, reply, sendOptions);
-
-  } catch (err) {
-    console.error("Error:", err);
-    bot.sendMessage(chatId, "Something went wrong. Please try again.");
-  }
-});
-
-// Улучшенный HTTP-сервер: теперь он корректно отвечает 200 OK на GET и HEAD запросы пингера
-const PORT = process.env.PORT || 3000;
-const server = http.createServer((req, res) => {
-  if (req.url === "/" || req.url === "") {
-    if (req.method === "GET" || req.method === "HEAD") {
-      res.writeHead(200, { 
-        "Content-Type": "text/plain",
-        "Connection": "close"
-      });
-      res.end("OK");
-      return;
-    }
-  }
-  res.writeHead(404);
-  res.end();
-});
-
-server.listen(PORT, async () => {
-  console.log(`HTTP server listening on port ${PORT}`);
-  
-  try {
-    // Сначала гарантированно сбрасываем старый вебхук и дропаем подвисшие апдейты
-    await bot.deleteWebHook({ drop_pending_updates: true });
-    console.log("Webhook cleared successfully.");
-    
-    // Небольшая искусственная пауза в 1.5 секунды, чтобы дать Render 
-    // завершить остановку старых контейнеров перед тем, как мы включим новый Polling
-    setTimeout(() => {
-      bot.startPolling();
-      console.log("RWA NFT FI Bot is running via Polling...");
-    }, 1500);
-
-  } catch (e) {
-    console.log("Error during bot startup initialization:", e.message);
-    // В случае сбоя всё равно пробуем запуститься
-    bot.startPolling();
-  }
-});
+  const
