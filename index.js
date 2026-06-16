@@ -1,10 +1,14 @@
 require("dotenv").config();
 const TelegramBot = require("node-telegram-bot-api");
 const Anthropic = require("@anthropic-ai/sdk");
-const http = require("http");
 
-// Инициализация бота СТРОГО без polling. Бот будет работать через Webhook.
-const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
+const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
+  polling: {
+    interval: 300,
+    autoStart: true,
+    params: { timeout: 10 }
+  }
+});
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const histories = new Map();
@@ -153,7 +157,7 @@ async function askClaude(userId, userMessage, refLink) {
 REF LINK FOR THIS USER: ${refLink}
 Always use this exact link when mentioning the platform or registration.`;
   const response = await anthropic.messages.create({
-    model: "claude-3-5-sonnet-20241022",
+    model: "claude-sonnet-4-5",
     max_tokens: 1024,
     system: systemWithRef,
     messages: getHistory(userId),
@@ -244,49 +248,26 @@ bot.on("message", async (msg) => {
   }
 });
 
-// СЕРВЕРНАЯ ЧАСТЬ И СВЯЗЫВАНИЕ ЧЕРЕЗ WEBHOOK ДЛЯ RENDER
-const PORT = process.env.PORT || 3000;
-const RENDER_URL = "https://verkaassistantbot-b0uq.onrender.com"; 
+// Гарантированно чистим вебхук перед стартом лонг-поллинга, как в оригинале
+bot.deleteWebHook({ drop_pending_updates: true })
+  .then(() => console.log("Webhook cleared"))
+  .catch(e => console.log("Webhook clear error:", e.message));
 
-const server = http.createServer((req, res) => {
-  // Исправление для Uptime Robot (обрабатываем GET и HEAD на главную страницу)
+console.log("RWA NFT FI Bot is running...");
+
+// Пропатченный веб-сервер для Uptime Robot (обрабатывает HEAD и GET без ошибок)
+const http = require("http");
+const PORT = process.env.PORT || 3000;
+http.createServer((req, res) => {
   if (req.url === "/" || req.url === "") {
     if (req.method === "GET" || req.method === "HEAD") {
       res.writeHead(200, { "Content-Type": "text/plain", "Connection": "close" });
-      res.end("Vera Assistant is Live and Healthy!");
+      res.end("OK");
       return;
     }
   }
-
-  // Прием обновлений от Telegram строго через POST вебхук
-  if (req.url === `/bot${process.env.TELEGRAM_BOT_TOKEN}` && req.method === "POST") {
-    let body = "";
-    req.on("data", chunk => { body += chunk; });
-    req.on("end", () => {
-      try {
-        const update = JSON.parse(body);
-        bot.processUpdate(update);
-      } catch (e) {
-        console.error("Error parsing telegram update:", e.message);
-      }
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ ok: true }));
-    });
-    return;
-  }
-
   res.writeHead(404);
   res.end();
-});
-
-// Запуск сервера и активация вебхука в Telegram
-server.listen(PORT, async () => {
+}).listen(PORT, () => {
   console.log(`HTTP server listening on port ${PORT}`);
-  try {
-    const webhookUrl = `${RENDER_URL}/bot${process.env.TELEGRAM_BOT_TOKEN}`;
-    await bot.setWebHook(webhookUrl, { drop_pending_updates: true });
-    console.log(`Webhook successfully set to: ${webhookUrl}`);
-  } catch (e) {
-    console.error("Error setting webhook:", e.message);
-  }
 });
