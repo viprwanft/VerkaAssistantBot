@@ -11,20 +11,12 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const histories = new Map();
 const MAX_HISTORY = 10;
 
-// Файл для хранения ID приветственных видео по языкам
 const VIDEO_DB_PATH = path.join(__dirname, "welcome_videos.json");
 let welcomeVideos = {};
 if (fs.existsSync(VIDEO_DB_PATH)) {
   try { welcomeVideos = JSON.parse(fs.readFileSync(VIDEO_DB_PATH, "utf8")); } catch (e) { welcomeVideos = {}; }
 }
 
-const REG_POSTS = {
-  ru: 825, en: 828, zh: 861, fr: 898,
-  de: 831, hi: 876, it: 879, fil: 882,
-  pt: 891, es: 894, tr: 888, vi: 885,
-};
-
-const SOURCE_CHAT = "@rwanftglobal";
 const REF_LINKS = {
   en: 'https://app.rwanftfi.com/?ref=ProCripto',
   hi: 'https://app.rwanftfi.com/?ref=ProCripto',
@@ -40,15 +32,13 @@ const REF_LINKS = {
   vi: 'https://app.rwanftfi.com/?ref=PereudaDS',
 };
 
-// Тексты приветствий на разных языках (без лишней лирики)
 const WELCOME_TEXTS = {
-  ru: `Привет, **{name}**! Добро пожаловать в **RWA NFT FI** 🌍\n\nЯ Вера, ИИ-ассистент проекта. Помогу тебе быстро освоиться на платформе, найти команду для развития и запустить свой доход на майнинге.\n\n**С чего начать прямо сейчас?**\nИзучи наш закреп и посмотри короткое видео выше.\n\nЕсли появятся любые вопросы по платформе или токенам — **пиши их прямо сюда, в чат**. Я всегда в сети и отвечу тебе за секунду! 🚀`,
+  ru: `Привет, **{name}**! Добро пожаловать в **RWA NFT FI** 🌍\n\nЯ Вера, ИИ-ассистент проекта. Помогу тебе быстро освоиться на платформе, найти команду для развития и запустить свой доход на майнинге.\n\n**С чего начать прямо сейчас?**\nИзучи наш закреп и посмотри короткое video выше.\n\nЕсли появятся любые вопросы по платформе или токенам — **пиши их прямо сюда, в чат**. Я всегда в сети и отвечу тебе за секунду! 🚀`,
   en: `Hi, **{name}**! Welcome to **RWA NFT FI** 🌍\n\nI'm Vera, the AI assistant. I'll help you get started on the platform, find a team for growth, and launch your mining income.\n\n**Where to start right now?**\nCheck out our pinned message and watch the short video above.\n\nIf you have any questions about the platform or tokens, **drop them right here in the chat**. I'm always online and will reply in a second! 🚀`,
   de: `Hallo, **{name}**! Willkommen bei **RWA NFT FI** 🌍\n\nIch bin Vera, die KI-Assistentin des Projekts. Ich helfe dir, dich schnell auf der Plattform zurechtzufinden, ein Team für die Entwicklung aufzubauen und dein Mining-Einkommen zu starten.\n\n**Wo soll man jetzt anfangen?**\nLies unsere angepinnte Nachricht und schau dir das kurze Video oben an.\n\nWenn du Fragen zur Plattform oder zu den Token hast — **schreibe sie direkt hier in den Chat**. Ich bin immer online und antworte dir sofort! 🚀`,
-  fr: `Bonjour, **{name}**! Bienvenue chez **RWA NFT FI** 🌍\n\nJe suis Vera, l'assistante IA du projet. Je t'aiderai à te familiariser rapidement avec la plateforme, à trouver une équipe pour te développer et à lancer tes revenus de mining.\n\n**Par quoi commencer dès maintenant ?**\nConsulte notre message épinglé et regarde la courte vidéo ci-dessus.\n\nSi tu as des questions sur la plateforme ou les tokens — **écris-les directement ici dans le chat**. Je suis toujours en ligne et je te répondrai en une seconde ! 🚀`,
+  fr: `Bonjour, **{name}**! Bienvenue chez **RWA NFT FI** 🌍\n\nJe suis Vera, l'assistante IA du projet. Je t'aiderai à te familiariser rapidement avec la plateforme, à trouver une équipe pour te développer et à lancer tes revenus de mining.\n\n**Par quoi commencer dès maintenant ?**\nConsulte our message épinglé et regarde la courte vidéo ci-dessus.\n\nSi tu as des questions sur la plateforme ou les tokens — **écris-les directement ici dans le chat**. Je suis toujours en ligne et je te répondrai en une seconde ! 🚀`,
   es: `¡Hola, **{name}**! Bienvenido a **RWA NFT FI** 🌍\n\nSoy Vera, la asistente de IA del proyecto. Te ayudaré a familiarizarte rápidamente con la plataforma, encontrar un equipo para desarrollarte y lanzar tus ingresos de minería.\n\n**¿Por dónde empezar ahora mismo?**\nRevisa nuestro mensaje fijado y mira el breve video de arriba.\n\nSi tienes alguna pregunta sobre la plataforma o los tokens, **escríbela directamente aquí en el chat**. ¡Siempre estoy en línea y te responderé en un segundo! 🚀`,
-  pt: `Olá, **{name}**! Bem-vindo ao **RWA NFT FI** 🌍\n\nSou Vera, a assistente de IA do projeto. Vou te ajudar a se ambientar rapidamente na plataforma, encontrar uma equipe para evoluir e lançar sua renda com mineração.\n\n**Por onde começar agora mesmo?**\nConfira nossa mensagem fixada e assista ao breve vídeo acima.\n\nSe tiver qualquer dúvida sobre a pf ou tokens — **escreva direto aqui no chat**. Estou sempre online` +
-      ` и те respondo em um segundo! 🚀`,
+  pt: `Olá, **{name}**! Bem-vindo ao **RWA NFT FI** 🌍\n\nSou Vera, a assistente de IA do projeto. Vou te ajudar a se ambientar rapidamente na plataforma, encontrar uma equipe para evoluir e lançar sua renda com mineração.\n\n**Por onde começar agora mesmo?**\nConfira nossa mensagem fixada e assista ao breve vídeo acima.\n\nSe tiver qualquer dúvida sobre a pf ou tokens — **escreva direto aqui no chat**. Estou sempre online e te respondo em um segundo! 🚀`,
   it: `Ciao, **{name}**! Benvenuto in **RWA NFT FI** 🌍\n\nSono Vera, l'assistente IA del progetto. Ti aiuterò a orientarti rapidamente sulla piattaforma, trovare un team per crescere e avviare la tua rendita dal mining.\n\n**Da dove iniziare adesso?**\nDai un'occhiata al nostro messaggio in evidenza e guarda il breve video sopra.\n\nSe hai domande sulla piattaforma o sui token — **scrivile direttamente qui in chat**. Sono sempre online e ti risponderò in un secondo! 🚀`,
   zh: `你好，**{name}**！欢迎来到 **RWA NFT FI** 🌍\n\n我是维拉（Vera），项目的 AI 助手。我将帮助您快速熟悉平台、找到共同发展的团队并开启您的挖矿收益。\n\n**现在该如何开始？**\n请查看我们的置顶消息并观看上方的短视频。\n\n如果您对平台或代币有任何疑问 — **请直接在聊天中发送**。我一直在线，会在一秒钟内回复您！🚀`,
   fil: `Hi, **{name}**! Maligayang pagdating sa **RWA NFT FI** 🌍\n\nAko si Vera, ang AI assistant ng proyekto. Tutulungan kitang mabilis na masanay sa platform, makahanap ng koponan para sa paglago, at simulan ang iyong kita sa mining.\n\n**Saan magsisimula ngayon?**\nTingnan ang aming pinned message at panoorin ang maikling video sa itaas.\n\nKung mayroon kang anumang mga katanungan tungkol sa platform o tokens — **i-drop ang mga ito dito mismo sa chat**. Laging akong online at sasagutin kita sa loob ng isang segundo! 🚀`,
@@ -60,33 +50,22 @@ const WELCOME_TEXTS = {
 function getRefLink(lang) { return REF_LINKS[lang] || REF_LINKS['en']; }
 
 const REG_KEYWORDS = [
-  "register","registration","sign up","signup","join","how to start","get started","how do i join",
-  "registro","registrar","como","empezar","unirse",
-  "registrierung","anmelden","beitreten","anfangen",
-  "inscription","inscrire","rejoindre","commencer",
-  "registrazione","iscriversi","iniziare","unirsi",
-  "kayit","nasil","katil","basla",
-  "dang ky","tham gia","bat dau",
-  "mag-register","sumali","magsimula",
-  "panjikaran","kaise","jude",
-  "zhuce","jiaru","kaishi",
-  "регистрация","зарегистрироваться","как зарегистрироваться","как вступить","как начать","как присоединиться","как стать",
+  "регистрация", "зарегистрироваться", "как начать", "ссылка", "инструкция", "вайтлист", "whitepaper", "регистрации",
+  "register", "registration", "sign up", "signup", "join", "get started", "link", "whitepaper", "how to start"
 ];
 
 function detectLang(text) {
   const t = text.toLowerCase();
   if (/[\u4e00-\u9fff]/.test(t)) return "zh";
   if (/[\u0900-\u097f]/.test(t)) return "hi";
-  if (/[\u0600-\u06ff]/.test(t)) return "ar";
   if (/[\u0400-\u04ff]/.test(t)) return "ru";
-  if (/\b(de|das|die|ich|und|ist|wie|bitte|danke|hallo)\b/.test(t)) return "de";
-  if (/\b(le|la|les|je|vous|nous|comment|merci|bonjour)\b/.test(t)) return "fr";
-  if (/\b(el|la|los|yo|como|gracias|hola|que)\b/.test(t)) return "es";
-  if (/\b(il|la|i|come|grazie|ciao|sono|per)\b/.test(t)) return "it";
-  if (/\b(o|a|os|as|como|obrigado|ola|voce)\b/.test(t)) return "pt";
-  if (/\b(ve|bir|bu|nasil|tesekkur|merhaba|kayit)\b/.test(t)) return "tr";
-  if (/\b(dang|ky|khong|duoc|va|cua|ban)\b/.test(t)) return "vi";
-  if (/\b(ang|ng|sa|na|mga|po|ito|ako)\b/.test(t)) return "fil";
+  if (/\b(de|das|die|ich|und|ist)\b/.test(t)) return "de";
+  if (/\b(le|la|les|je|vous|comment)\b/.test(t)) return "fr";
+  if (/\b(el|la|los|yo|como|que)\b/.test(t)) return "es";
+  if (/\b(il|la|i|come|ciao)\b/.test(t)) return "it";
+  if (/\b(o|a|os|as|como|ola)\b/.test(t)) return "pt";
+  if (/\b(ve|bir|bu|nasil|merhaba)\b/.test(t)) return "tr";
+  if (/\b(dang|ky|khong|duoc)\b/.test(t)) return "vi";
   return "en";
 }
 
@@ -193,63 +172,25 @@ Always use this exact link when mentioning the platform or registration.`;
 async function processIncomingMessage(userId, chatId, userText, msgObjectForForwarding = null) {
   const cleanText = userText.replace(/@\w+/g, "").trim();
   const text = cleanText || userText;
+  const lang = detectLang(text);
+  const refLink = getRefLink(lang);
 
+  // Если юзер просит регистрацию, вайтлист или ссылки — Claude генерирует сочный умный ответ
   if (isRegQuestion(text)) {
-    const lang = detectLang(text);
-    const postId = REG_POSTS[lang] || REG_POSTS["en"];
+    const promptForLinks = `The user is asking about registration, links, or whitepaper: "${text}". 
+    Give them a friendly, direct response with step-by-step guidance.
+    You MUST naturally include these exact official links in your response:
+    - Registration/Platform: ${refLink}
+    - Official Whitepaper: https://whitepaper.rwanftfi.com
+    - Pitch Deck: https://deck.rwanftfi.com
+    Keep the response concise, helpful, and completely in the user's language.`;
     
-    let name = "";
-    if (msgObjectForForwarding && msgObjectForForwarding.from) {
-      name = msgObjectForForwarding.from.first_name || "";
-    }
-
-    const greetings = {
-      ru: `Привет${name ? ", " + name : ""}! Я Вера, служба поддержки **RWA NFT FI**. Лови пошаговую инструкцию по регистрации:`,
-      en: `Hi${name ? ", " + name : ""}! I'm Vera from **RWA NFT FI** support. Here is your step-by-step registration guide:`,
-      de: `Hallo${name ? ", " + name : ""}! Ich bin Vera vom **RWA NFT FI** Support. Hier ist deine Registrierungsanleitung:`,
-      fr: `Bonjour${name ? ", " + name : ""}! Je suis Vera du support **RWA NFT FI**. Voici votre guide d'inscription:`,
-      es: `Hola${name ? ", " + name : ""}! Soy Vera del soporte de **RWA NFT FI**. Aquí tienes tu guía de registro:`,
-      pt: `Olá${name ? ", " + name : ""}! Sou Vera do suporte da **RWA NFT FI**. Aqui está seu guia de registro:`,
-      it: `Ciao${name ? ", " + name : ""}! Sono Vera del supporto **RWA NFT FI**. Ecco la tua guida alla registrazione:`,
-      zh: `你好${name ? name : ""}！我是 **RWA NFT FI** 团队 Support 的 Vera。这是您的注册指南：`,
-      hi: `Namaste${name ? ", " + name : ""}! Main **RWA NFT FI** support se Vera hun. Yahan aapka registration guide hai:`,
-      tr: `Merhaba${name ? ", " + name : ""}! Ben **RWA NFT FI** destek ekibinden Vera. İşte kayıt rehberiniz:`,
-      vi: `Xin chào${name ? ", " + name : ""}! Tôi là Vera từ đội ngũ hỗ trợ **RWA NFT FI**. Đây là hướng dẫn đăng ký của bạn:`,
-      fil: `Kumusta${name ? ", " + name : ""}! Ako si Vera mula sa **RWA NFT FI** support. Narito ang iyong gabay sa pagpaparehistro:`,
-    };
-
-    const refLink = getRefLink(lang);
-    const greeting = (greetings[lang] || greetings["en"]) + `\n\n🔗 ${refLink}`;
-    
-    const sendOptions = { parse_mode: "Markdown" }; 
-    if (msgObjectForForwarding && msgObjectForForwarding.message_id) {
-      sendOptions.reply_to_message_id = msgObjectForForwarding.message_id;
-    }
-    if (msgObjectForForwarding && msgObjectForForwarding.message_thread_id) {
-      sendOptions.message_thread_id = msgObjectForForwarding.message_thread_id;
-    }
-
-    await bot.sendMessage(chatId, greeting, sendOptions);
-    await new Promise(r => setTimeout(r, 800));
-
-    try {
-      const fwdOptions = {};
-      if (msgObjectForForwarding && msgObjectForForwarding.message_thread_id) {
-        fwdOptions.message_thread_id = msgObjectForForwarding.message_thread_id;
-      }
-      await bot.forwardMessage(chatId, SOURCE_CHAT, postId, fwdOptions);
-    } catch (fwdErr) {
-      console.error("Forward error:", fwdErr.message);
-      await bot.sendMessage(chatId, `Registration link: ${refLink}`, sendOptions);
-    }
-    return null;
+    return await askClaude(userId, promptForLinks, refLink);
   }
 
-  const refLink = getRefLink(detectLang(text));
   return await askClaude(userId, text, refLink);
 }
 
-// Перехват системного события: НОВЫЙ ПОЛЬЗОВАТЕЛЬ ЗАШЕЛ В ГРУППУ
 bot.on("new_chat_members", async (msg) => {
   const chatId = msg.chat.id;
   const newMembers = msg.new_chat_members;
@@ -263,32 +204,26 @@ bot.on("new_chat_members", async (msg) => {
     const name = member.first_name || "User";
     const rawText = WELCOME_TEXTS[lang].replace("{name}", name);
 
-    const sendOptions = { parse_mode: "Markdown" };
-    if (msg.message_thread_id) sendOptions.message_thread_id = msg.message_thread_id;
-
     if (welcomeVideos[lang]) {
       try {
         await bot.sendVideo(chatId, welcomeVideos[lang], { caption: rawText, parse_mode: "Markdown", message_thread_id: msg.message_thread_id });
       } catch (err) {
         console.error(`Error sending welcome video for ${lang}:`, err.message);
-        await bot.sendMessage(chatId, rawText, sendOptions);
+        await bot.sendMessage(chatId, rawText, { parse_mode: "Markdown", message_thread_id: msg.message_thread_id });
       }
     } else {
-      await bot.sendMessage(chatId, rawText, sendOptions);
+      await bot.sendMessage(chatId, rawText, { parse_mode: "Markdown", message_thread_id: msg.message_thread_id });
     }
   }
 });
 
-// Обработчик сообщений в чате
 bot.on("message", async (msg) => {
   if (msg.new_chat_members) return;
 
-  // УМНЫЙ РЕЖИМ АДМИНА: Вера сама понимает язык по названию файла
   if (msg.chat.type === "private" && msg.video) {
     const fileName = msg.video.file_name ? msg.video.file_name.toLowerCase() : "";
     let detectedLang = null;
 
-    // Сверхточные проверки по ключевым словам из названий файлов
     if (/[\u4e00-\u9fff]/.test(fileName) || fileName.includes("chinese") || fileName.includes("zh")) detectedLang = "zh";
     else if (/[\u0900-\u097f]/.test(fileName) || fileName.includes("hindi") || fileName.includes("hi")) detectedLang = "hi";
     else if (/[а-яА-ЯёЁ]/.test(fileName) || fileName.includes("russian") || fileName.includes("ru")) detectedLang = "ru";
@@ -311,7 +246,7 @@ bot.on("message", async (msg) => {
       bot.sendMessage(msg.chat.id, `✅ Видео для языка **${detectedLang.toUpperCase()}** автоматически распознано и сохранено!`, { parse_mode: "Markdown" });
       return;
     } else {
-      bot.sendMessage(msg.chat.id, `❌ Не смогла понять язык по названию файла: "${msg.video.file_name}". Отправь видео еще раз и укажи код языка в подписи (caption) руками.`);
+      bot.sendMessage(msg.chat.id, `❌ Не смогла понять язык по названию файла: "${msg.video.file_name}".`);
       return;
     }
   }
