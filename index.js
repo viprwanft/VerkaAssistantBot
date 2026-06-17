@@ -4,20 +4,38 @@ const Anthropic = require("@anthropic-ai/sdk");
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
 const histories = new Map();
 const MAX_HISTORY = 10;
 const welcomedUsers = new Set();
+// Hardcoded video file_ids per language — survives deploys (unlike the local JSON file).
+// Fill these in once you have the file_id for each language (sent via bot confirmation).
+// Leave empty string "" for languages without a video yet — bot will fall back to text-only.
+const WELCOME_VIDEOS_FIXED = {
+  ru: "",
+  en: "",
+  de: "",
+  hi: "",
+  zh: "",
+  es: "",
+  fr: "",
+  pt: "",
+  it: "",
+  fil: "",
+  tr: "",
+  vi: "",
+};
 
 const VIDEO_DB_PATH = path.join(__dirname, "welcome_videos.json");
 let welcomeVideos = {};
 if (fs.existsSync(VIDEO_DB_PATH)) {
   try { welcomeVideos = JSON.parse(fs.readFileSync(VIDEO_DB_PATH, "utf8")); } catch (e) { welcomeVideos = {}; }
 }
-
+// Merge: hardcoded values take priority once filled in, JSON file acts as a temporary fallback
+for (const lang in WELCOME_VIDEOS_FIXED) {
+  if (WELCOME_VIDEOS_FIXED[lang]) welcomeVideos[lang] = WELCOME_VIDEOS_FIXED[lang];
+}
 const REF_LINKS = {
   en: 'https://app.rwanftfi.com/?ref=ProCripto',
   hi: 'https://app.rwanftfi.com/?ref=ProCripto',
@@ -33,28 +51,46 @@ const REF_LINKS = {
   vi: 'https://app.rwanftfi.com/?ref=PereudaDS',
 };
 
+// Map forum thread_id (branch) -> language code.
+// IMPORTANT: fill these in with your real thread IDs for each language branch in the group.
+const THREAD_LANG = {
+  3: 'ru', 5: 'en', 7: 'zh', 9: 'fr',
+  11: 'de', 13: 'hi', 15: 'it', 17: 'fil',
+  19: 'pt', 21: 'es', 23: 'tr', 25: 'vi',
+};
+
 const WELCOME_TEXTS = {
   ru: `Привет, **{name}**! Добро пожаловать в **RWA NFT FI** 🌍\n\nЯ Вера, ИИ-ассистент проекта. Помогу тебе быстро освоиться на платформе, найти команду для развития и запустить свой доход на майнинге.\n\n**С чего начать прямо сейчас?**\nИзучи наш закреп и посмотри короткое видео выше.\n\nЕсли появятся любые вопросы по платформе или токенам — **пиши их прямо сюда, в чат**. Я всегда в сети и отвечу тебе за секунду! 🚀`,
   en: `Hi, **{name}**! Welcome to **RWA NFT FI** 🌍\n\nI'm Vera, the AI assistant. I'll help you get started on the platform, find a team for growth, and launch your mining income.\n\n**Where to start right now?**\nCheck out our pinned message and watch the short video above.\n\nIf you have any questions about the platform or tokens, **drop them right here in the chat**. I'm always online and will reply in a second! 🚀`,
   de: `Hallo, **{name}**! Willkommen bei **RWA NFT FI** 🌍\n\nIch bin Vera, die KI-Assistentin des Projekts. Ich helfe dir, dich schnell auf der Plattform zurechtzufinden, ein Team für die Entwicklung aufzubauen und dein Mining-Einkommen zu starten.\n\n**Wo soll man jetzt anfangen?**\nLies unsere angepinnte Nachricht und schau dir das kurze Video oben an.\n\nWenn du Fragen zur Plattform oder zu den Token hast — **schreibe sie direkt hier in den Chat**. Ich bin immer online und antworte dir sofort! 🚀`,
-  fr: `Bonjour, **{name}**! Bienvenue chez **RWA NFT FI** 🌍\n\nJe suis Vera, l'assistante IA du projet. Je t'aiderai à te familiariser rapidement avec la plateforme, à trouver une équipe para te développer et à lancer tes revenus de mining.\n\n**Par quoi commencer dès maintenant ?**\nConsulte notre message épinglé et regarde la courte vidéo ci-dessus.\n\nSi tu as des questions sur la plateforme ou les tokens — **écris-les directement ici dans le chat**. Je suis toujours en ligne et je te répondrai en une seconde ! 🚀`,
-  es: `¡Hola, **{name}**! Bienvenido a **RWA NFT FI** 🌍\n\nSoy Vera, la asistente de IA del proyecto. Te ajudaré a familiarizarte rápidamente con la plataforma, encontrar un equipo para desarrollarte y lancer tus ingresos de minería.\n\n**¿Por dónde empezar ahora mismo?**\nRevisa nuestro message fijado и mira el breve video de arriba.\n\nSi tienes alguna pregunta sobre la plataforma o los tokens, **escríbela directamente aquí nello chat**. ¡Siempre estoy en línea y te responderé en un segundo! 🚀`,
-  pt: `Olá, **{name}**! Bem-vindo ao **RWA NFT FI** 🌍\n\nSou Vera, a assistente de IA do projeto. Vou te ajudar a se ambientar rapidamente na plataforma, encontrar uma equipe para evoluir e lançar sua renda com mineração.\n\n**Por onde começar agora mesmo?**\nConfira nossa mensagem fixada e assista ao breve vídeo acima.\n\nSe tiver qualquer dúvida sobre a pf ou tokens — **escreva direto aqui no chat**. Estou sempre online и те respondo em um segundo! 🚀`,
-  it: `Ciao, **{name}**! Benvenuto in **RWA NFT FI** 🌍\n\nSono Vera, l'assistente IA del progetto. Ti aiuterò a orientarti rapidamente sulla piattaforma, trovare un team per crescere e avviare la tua rendita dal mining.\n\n**Da onde iniziare adesso?**\nDai un'occhiata al nostro messaggio in evidenza e guarda il breve video sopra.\n\nSe hai domande sulla piattaforma o sui token — **scrivile direttamente qui in chat**. Sono sempre online e ti risponderò in un secondo! 🚀`,
-  zh: `你好，**{name}**！欢迎来到 **RWA NFT FI** 🌍\n\n我是维拉（Vera），项目的 AI 助手。我将帮助您快速熟悉平台、找到共同发展的团队并开启您的挖矿收益。\n\n**现在该如何开始？**\n请查看我们的置顶消息并观看上方の短视频。\n\n如果您对平台或代币有任何疑问 — **请直接在聊天中发送**。我一直在线，会在一秒钟内回复您！🚀`,
-  fil: `Hi, **{name}**! Maligayang pagdating sa **RWA NFT FI** 🌍\n\nAko si Vera, ang AI assistant ng projektu. Tutulungan kitang mabilis na masanay sa platform, makahanap ng koponan para sa paglago, at simulan ang iyong kita sa mining.\n\n**Saan magsisimula ngayon?**\nTingnan ang aming pinned message at panoorin ang maikling video sa itaas.\n\nKung mayroon kang anumang mga katanungan tungkol sa platform o tokens — **i-drop ang mga ito dito mismo sa chat**. Laging akong online at sasagutin kita sa loob ng isang segundo! 🚀`,
-  tr: `Merhaba...`,
-  vi: `Chào...`,
-  hi: `Namaste...`
+  fr: `Bonjour, **{name}**! Bienvenue chez **RWA NFT FI** 🌍\n\nJe suis Vera, l'assistante IA du projet. Je t'aiderai à te familiariser rapidement avec la plateforme, à trouver une équipe pour te développer et à lancer tes revenus de mining.\n\n**Par quoi commencer dès maintenant ?**\nConsulte notre message épinglé et regarde la courte vidéo ci-dessus.\n\nSi tu as des questions sur la plateforme ou les tokens — **écris-les directement ici dans le chat**. Je suis toujours en ligne et je te répondrai en une seconde ! 🚀`,
+  es: `¡Hola, **{name}**! Bienvenido a **RWA NFT FI** 🌍\n\nSoy Vera, la asistente de IA del proyecto. Te ayudaré a familiarizarte rápidamente con la plataforma, encontrar un equipo para desarrollarte y lanzar tus ingresos de minería.\n\n**¿Por dónde empezar ahora mismo?**\nRevisa nuestro mensaje fijado y mira el breve video de arriba.\n\nSi tienes alguna pregunta sobre la plataforma o los tokens, **escríbela directamente aquí en el chat**. ¡Siempre estoy en línea y te responderé en un segundo! 🚀`,
+  pt: `Olá, **{name}**! Bem-vindo ao **RWA NFT FI** 🌍\n\nSou Vera, a assistente de IA do projeto. Vou te ajudar a se ambientar rapidamente na plataforma, encontrar uma equipe para evoluir e lançar sua renda com mineração.\n\n**Por onde começar agora mesmo?**\nConfira nossa mensagem fixada e assista ao breve vídeo acima.\n\nSe tiver qualquer dúvida sobre a plataforma ou tokens — **escreva direto aqui no chat**. Estou sempre online e te respondo em um segundo! 🚀`,
+  it: `Ciao, **{name}**! Benvenuto in **RWA NFT FI** 🌍\n\nSono Vera, l'assistente IA del progetto. Ti aiuterò a orientarti rapidamente sulla piattaforma, trovare un team per crescere e avviare la tua rendita dal mining.\n\n**Da dove iniziare adesso?**\nDai un'occhiata al nostro messaggio in evidenza e guarda il breve video sopra.\n\nSe hai domande sulla piattaforma o sui token — **scrivile direttamente qui in chat**. Sono sempre online e ti risponderò in un secondo! 🚀`,
+  zh: `你好，**{name}**！欢迎来到 **RWA NFT FI** 🌍\n\n我是维拉（Vera），项目的 AI 助手。我将帮助您快速熟悉平台、找到共同发展的团队并开启您的挖矿收益。\n\n**现在该如何开始？**\n请查看我们的置顶消息并观看上方的短视频。\n\n如果您对平台或代币有任何疑问 — **请直接在聊天中发送**。我一直在线，会在一秒钟内回复您！🚀`,
+  fil: `Hi, **{name}**! Maligayang pagdating sa **RWA NFT FI** 🌍\n\nAko si Vera, ang AI assistant ng proyekto. Tutulungan kitang mabilis na masanay sa platform, makahanap ng koponan para sa paglago, at simulan ang iyong kita sa mining.\n\n**Saan magsisimula ngayon?**\nTingnan ang aming pinned message at panoorin ang maikling video sa itaas.\n\nKung mayroon kang anumang mga katanungan tungkol sa platform o tokens — **i-drop ang mga ito dito mismo sa chat**. Laging akong online at sasagutin kita sa loob ng isang segundo! 🚀`,
+  tr: `Merhaba, **{name}**! **RWA NFT FI**'ya hoş geldin 🌍\n\nBen Vera, projenin yapay zeka asistanıyım. Platformda hızlıca yön bulmana, gelişim için bir ekip bulmana ve madencilik gelirini başlatmana yardımcı olacağım.\n\n**Şimdi nereden başlamalı?**\nSabitlenmiş mesajımıza göz at ve yukarıdaki kısa videoyu izle.\n\nPlatform veya tokenler hakkında soruların varsa — **doğrudan buraya, sohbete yaz**. Her zaman çevrimiçiyim ve bir saniye içinde cevap vereceğim! 🚀`,
+  vi: `Xin chào, **{name}**! Chào mừng đến với **RWA NFT FI** 🌍\n\nTôi là Vera, trợ lý AI của dự án. Tôi sẽ giúp bạn nhanh chóng làm quen với nền tảng, tìm một nhóm để phát triển và bắt đầu thu nhập từ khai thác.\n\n**Bắt đầu từ đâu ngay bây giờ?**\nHãy xem tin nhắn được ghim của chúng tôi và xem video ngắn ở trên.\n\nNếu bạn có bất kỳ câu hỏi nào về nền tảng hoặc token — **hãy viết trực tiếp vào đây, trong chat**. Tôi luôn trực tuyến và sẽ trả lời bạn trong vòng một giây! 🚀`,
+  hi: `नमस्ते, **{name}**! **RWA NFT FI** में आपका स्वागत है 🌍\n\nमैं वेरा हूं, प्रोजेक्ट की AI सहायक। मैं आपको प्लेटफ़ॉर्म पर जल्दी से शुरुआत करने, विकास के लिए एक टीम खोजने और अपनी माइनिंग आय शुरू करने में मदद करूंगी।\n\n**अभी कहां से शुरू करें?**\nहमारा पिन किया गया संदेश देखें और ऊपर दिया गया छोटा वीडियो देखें।\n\nयदि आपके पास प्लेटफ़ॉर्म या टोकन के बारे में कोई प्रश्न हैं — **उन्हें सीधे यहीं चैट में लिखें**। मैं हमेशा ऑनलाइन हूं और एक सेकंड में जवाब दूंगी! 🚀`
 };
 
 function getRefLink(lang) { return REF_LINKS[lang] || REF_LINKS['en']; }
+
+function getLangByThread(threadId) {
+  return THREAD_LANG[threadId] || null;
+}
+
+// Map a Telegram language_code (e.g. "en", "en-US", "pt-BR") to one of our supported langs
+function normalizeLangCode(languageCode) {
+  if (!languageCode) return "en";
+  const code = languageCode.toLowerCase().split("-")[0];
+  return WELCOME_TEXTS[code] ? code : "en";
+}
 
 const REG_KEYWORDS = [
   "регистрация", "зарегистрироваться", "как начать", "ссылка", "инструкция", "вайтлист", "whitepaper",
   "register", "registration", "sign up", "signup", "join", "get started", "link", "whitepaper"
 ];
-
 function detectLang(text) {
   const t = text.toLowerCase();
   if (/[\u4e00-\u9fff]/.test(t)) return "zh";
@@ -69,25 +105,20 @@ function detectLang(text) {
   if (/\b(dang|ky)\b/.test(t)) return "vi";
   return "en";
 }
-
 function isRegQuestion(text) {
   const t = text.toLowerCase();
   return REG_KEYWORDS.some(kw => t.includes(kw));
 }
-
 const SYSTEM_PROMPT = `You are Vera — human-like support assistant of the RWA NFT FI ecosystem on Binance Smart Chain.`;
-
 function getHistory(userId) {
   if (!histories.has(userId)) histories.set(userId, []);
   return histories.get(userId);
 }
-
 function addToHistory(userId, role, content) {
   const history = getHistory(userId);
   history.push({ role, content });
   if (history.length > MAX_HISTORY * 2) history.splice(0, history.length - MAX_HISTORY * 2);
 }
-
 async function askClaude(userId, userMessage, refLink) {
   addToHistory(userId, "user", userMessage);
   const response = await anthropic.messages.create({
@@ -100,41 +131,43 @@ async function askClaude(userId, userMessage, refLink) {
   addToHistory(userId, "assistant", reply);
   return reply;
 }
-
 async function processIncomingMessage(userId, chatId, userText) {
   const text = userText.replace(/@\w+/g, "").trim();
   const lang = detectLang(text);
   const refLink = getRefLink(lang);
-
   if (isRegQuestion(text)) {
     return await askClaude(userId, `The user asks about registration. Guide them nicely with links:\n- Platform: ${refLink}\n- Whitepaper: https://whitepaper.rwanftfi.com`, refLink);
   }
   return await askClaude(userId, text, refLink);
 }
 
-async function triggerDirectWelcome(chatId, userObj) {
+// userObj = the Telegram user who joined. threadId = forum branch they joined in (if any).
+async function triggerDirectWelcome(chatId, userObj, threadId) {
   if (!userObj || userObj.is_bot) return;
   const userId = userObj.id;
-
   if (!welcomedUsers.has(userId)) {
     welcomedUsers.add(userId);
 
-    const langCode = userObj.language_code ? userObj.language_code.toLowerCase() : "en";
-    const lang = WELCOME_TEXTS[langCode] ? langCode : "en";
-    
+    // Priority: 1) language of the branch/thread they joined, 2) their Telegram app language, 3) English
+    const threadLang = getLangByThread(threadId);
+    const lang = threadLang || normalizeLangCode(userObj.language_code);
+
     const name = userObj.first_name || "User";
     const rawText = WELCOME_TEXTS[lang].replace("{name}", name);
+
+    const sendOptions = { parse_mode: "Markdown" };
+    if (threadId) sendOptions.message_thread_id = threadId;
 
     // Пауза 5 секунд, чтобы капча отработала первой
     setTimeout(async () => {
       if (welcomeVideos[lang]) {
         try {
-          await bot.sendVideo(chatId, welcomeVideos[lang], { caption: rawText, parse_mode: "Markdown" });
+          await bot.sendVideo(chatId, welcomeVideos[lang], { ...sendOptions, caption: rawText });
         } catch (err) {
-          await bot.sendMessage(chatId, rawText, { parse_mode: "Markdown" });
+          await bot.sendMessage(chatId, rawText, sendOptions);
         }
       } else {
-        await bot.sendMessage(chatId, rawText, { parse_mode: "Markdown" });
+        await bot.sendMessage(chatId, rawText, sendOptions);
       }
     }, 5000);
   }
@@ -142,11 +175,9 @@ async function triggerDirectWelcome(chatId, userObj) {
 
 bot.on("message", async (msg) => {
   if (msg.new_chat_members || msg.left_chat_member) return;
-
   if (msg.chat.type === "private" && msg.video) {
     const fileName = msg.video.file_name ? msg.video.file_name.toLowerCase() : "";
     let detectedLang = null;
-
     if (/[\u4e00-\u9fff]/.test(fileName) || fileName.includes("chinese") || fileName.includes("zh")) detectedLang = "zh";
     else if (/[\u0900-\u097f]/.test(fileName) || fileName.includes("hindi") || fileName.includes("hi")) detectedLang = "hi";
     else if (/[а-яА-ЯёЁ]/.test(fileName) || fileName.includes("russian") || fileName.includes("ru")) detectedLang = "ru";
@@ -158,19 +189,28 @@ bot.on("message", async (msg) => {
     else if (fileName.includes("german") || fileName.includes("de")) detectedLang = "de";
     else if (fileName.includes("french") || fileName.includes("fr")) detectedLang = "fr";
     else if (fileName.includes("filipino") || fileName.includes("fil")) detectedLang = "fil";
-
     if (detectedLang) {
       welcomeVideos[detectedLang] = msg.video.file_id;
       fs.writeFileSync(VIDEO_DB_PATH, JSON.stringify(welcomeVideos, null, 2), "utf8");
-      bot.sendMessage(msg.chat.id, `✅ Видео для языка **${detectedLang.toUpperCase()}** сохранено!`, { parse_mode: "Markdown" });
+      bot.sendMessage(
+        msg.chat.id,
+        `✅ Видео для языка **${detectedLang.toUpperCase()}** сохранено!\n\nfile_id (скопируй и пришли мне в чат):\n\`${msg.video.file_id}\``,
+        { parse_mode: "Markdown" }
+      );
       return;
     }
+    // If language could not be detected from the file name, still show the file_id
+    // so it can be manually mapped to a language.
+    bot.sendMessage(
+      msg.chat.id,
+      `⚠️ Не удалось определить язык по названию файла.\n\nfile_id (скопируй и пришли мне, укажи язык вручную):\n\`${msg.video.file_id}\``,
+      { parse_mode: "Markdown" }
+    );
     return;
   }
-
   if (!msg.text || msg.text.startsWith("/")) return;
   bot.sendChatAction(msg.chat.id, "typing");
-  
+
   const reply = await processIncomingMessage(msg.from.id, msg.chat.id, msg.text.trim());
   if (reply) {
     const sendOptions = { reply_to_message_id: msg.message_id, parse_mode: "Markdown" };
@@ -178,10 +218,8 @@ bot.on("message", async (msg) => {
     bot.sendMessage(msg.chat.id, reply, sendOptions);
   }
 });
-
 const PORT = process.env.PORT || 3000;
 const RENDER_URL = "https://verkaassistantbot-b0uq.onrender.com";
-
 http.createServer((req, res) => {
   if (req.url === `/bot${process.env.TELEGRAM_BOT_TOKEN}` && req.method === "POST") {
     let body = "";
@@ -189,24 +227,23 @@ http.createServer((req, res) => {
     req.on("end", async () => {
       try {
         const update = JSON.parse(body);
-
         // КЛАССИЧЕСКИЙ ПЕРЕХВАТ СЕРВИСНОГО СООБЩЕНИЯ О ВХОДЕ ИЗ КОРНЯ ВЕБХУКА
         if (update.message && update.message.new_chat_members) {
           const chatId = update.message.chat.id;
+          const threadId = update.message.message_thread_id;
           for (const memberUser of update.message.new_chat_members) {
-            await triggerDirectWelcome(chatId, memberUser);
+            await triggerDirectWelcome(chatId, memberUser, threadId);
           }
         }
-
         // Запасной вариант на случай, если Telegram прислал скрытое событие
         if (update.chat_member) {
           const chatId = update.chat_member.chat.id;
           const member = update.chat_member.new_chat_member;
           if (member && member.status !== "left" && member.status !== "kicked") {
-            await triggerDirectWelcome(chatId, member.user);
+            await triggerDirectWelcome(chatId, member.user, null);
           }
         }
-        
+
         bot.processUpdate(update);
       } catch (e) {
         console.error("Webhook processing error:", e.message);
