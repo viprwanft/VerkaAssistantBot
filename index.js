@@ -42,14 +42,14 @@ const WELCOME_TEXTS = {
   ru: `Привет, **{name}**! Добро пожаловать в **RWA NFT FI** 🌍\n\nЯ Вера, ИИ-ассистент проекта. Помогу тебе быстро освоиться на платформе, найти команду для развития и запустить свой доход на майнинге.\n\n**С чего начать прямо сейчас?**\nИзучи наш закреп и посмотри короткое видео выше.\n\nЕсли появятся любые вопросы по платформе или токенам — **пиши их прямо сюда, в чат**. Я всегда в сети и отвечу тебе за секунду! 🚀`,
   en: `Hi, **{name}**! Welcome to **RWA NFT FI** 🌍\n\nI'm Vera, the AI assistant. I'll help you get started on the platform, find a team for growth, and launch your mining income.\n\n**Where to start right now?**\nCheck out our pinned message and watch the short video above.\n\nIf you have any questions about the platform or tokens, **drop them right here in the chat**. I'm always online and will reply in a second! 🚀`,
   de: `Hallo, **{name}**! Willkommen bei **RWA NFT FI** 🌍\n\nIch bin Vera, die KI-Assistentin des Projekts. Ich helfe dir, dich schnell auf der Plattform zurechtzufinden, ein Team für die Entwicklung aufzubauen und dein Mining-Einkommen zu starten.\n\n**Wo soll man jetzt anfangen?**\nLies unsere angepinnte Nachricht und schau dir das kurze Video oben an.\n\nWenn du Fragen zur Plattform oder zu den Token hast — **schreibe sie direkt hier in den Chat**. Ich bin immer online und antworte dir sofort! 🚀`,
-  fr: `Bonjour, **{name}**! Bienvenue chez **RWA NFT FI** 🌍\n\nJe suis Vera, l'assistante IA du projet. Je t'aiderai à te familiariser rapidement avec la plateforme, à trouver une équipe pour te développer et à lancer tes revenus de mining.\n\n**Par quoi commencer dès maintenant ?**\nConsulte notre message épinglé et regarde la courte vidéo ci-dessus.\n\nSi tu as des questions sur la plateforme ou les tokens — **écris-les directement ici dans le chat**. Je suis toujours en ligne et je te répondrai en une seconde ! 🚀`,
-  es: `¡Hola, **{name}**! Bienvenido a **RWA NFT FI** 🌍\n\nSoy Vera, the asistente de IA del proyecto. Te ayudaré a familiarizarte rápidamente con la plataforma, encontrar un equipo para desarrollarte y lanzar tus ingresos de minería.\n\n**¿Por dónde empezar ahora mismo?**\nRevisa nuestro mensaje fijado y mira el breve video de arriba.\n\nSi tienes alguna pregunta sobre la plataforma o los tokens, **escríbela directamente aquí en el chat**. ¡Siempre estoy en línea y te responderé en un segundo! 🚀`,
+  fr: `Bonjour, **{name}**! Bienvenue chez **RWA NFT FI** 🌍\n\nJe suis Vera, l'assistante IA du projet. Je t'aiderai à te familiariser rapidement avec la plateforme, à trouver une équipe pour te développer et à lancer tes revenus de mining.\n\n**Par quoi commencer dès maintenant ?**\nConsulte notre message épinglé et regarde la courte vidéo ci-dessus.\n\nSi tu as des questions sur la plateforme ou les tokens — **écris-les directement ici dans le chat**. Si sono sempre online e ti risponderò in un secondo! 🚀`,
+  es: `¡Hola, **{name}**! Bienvenido a **RWA NFT FI** 🌍\n\nSoy Vera, la asistente de IA del proyecto. Te ayudaré a familiarizarte rápidamente con la plataforma, encontrar un equipo para desarrollarte y lanzar tus ingresos de minería.\n\n**¿Por dónde empezar ahora mismo?**\nRevisa nuestro mensaje fijado y mira el breve video de arriba.\n\nSi tienes alguna pregunta sobre la plataforma o los tokens, **escríbela directamente aquí en el chat**. ¡Siempre estoy en línea y te responderé in un secondo! 🚀`,
   pt: `Olá, **{name}**! Bem-vindo ao **RWA NFT FI** 🌍\n\nSou Vera, a assistente de IA do projeto. Vou te ajudar a se ambientar rapidamente na plataforma, encontrar uma equipe para evoluir e lançar sua renda com mineração.\n\n**Por onde começar agora mesmo?**\nConfira nossa mensagem fixada e assista ao breve vídeo acima.\n\nSe tiver qualquer dúvida sobre a pf ou tokens — **escreva direto aqui no chat**. Estou sempre online и те respondo em um segundo! 🚀`,
   it: `Ciao, **{name}**! Benvenuto in **RWA NFT FI** 🌍\n\nSono Vera, l'assistente IA del progetto. Ti aiuterò a orientarti rapidamente sulla piattaforma, trovare un team per crescere e avviare la tua rendita dal mining.\n\n**Da dove iniziare adesso?**\nDai un'occhiata al nostro messaggio in evidenza e guarda il breve video sopra.\n\nSe hai domande sulla piattaforma o sui token — **scrivile direttamente qui in chat**. Sono sempre online e ti risponderò in un secondo! 🚀`,
   zh: `你好，**{name}**！欢迎来到 **RWA NFT FI** 🌍\n\n我是维拉（Vera），项目的 AI 助手。我将帮助您快速熟悉平台、找到共同发展的团队并开启您的挖矿收益。\n\n**现在该如何开始？**\n请查看我们的置顶消息并观看上方的短视频。\n\n如果您对平台或代币有任何疑问 — **请直接在聊天中发送**。我一直在线，会在一秒钟内回复您！🚀`,
   fil: `Hi, **{name}**! Maligayang pagdating sa **RWA NFT FI** 🌍\n\nAko si Vera, ang AI assistant ng proyekto. Tutulungan kitang mabilis na masanay sa platform, makahanap ng koponan para sa paglago, at simulan ang iyong kita sa mining.\n\n**Saan magsisimula ngayon?**\nTingnan ang aming pinned message at panoorin ang maikling video sa itaas.\n\nKung mayroon kang anumang mga katanungan tungkol sa platform o tokens — **i-drop ang mga ito dito mismo sa chat**. Laging akong online at sasagutin kita sa loob ng isang segundo! 🚀`,
   tr: `Merhaba, **{name}**! **RWA NFT FI** topluluğuna hoş geldin 🌍\n\nBen Vera, projenin yapay zeka asistanıyım. Platforma hızla alışmana, gelişim için bir ekip bulmana ve madencilik geliri elde etmene yardımcı olacağım.\n\n**Şu an nereden başlamalısın?**\nYönlendirilmiş mesajımızı incele ve yukarıdaki kısa videoyu izle.\n\nPlatform veya tokenlar hakkında herhangi bir sorun olursa — **doğrudan buraya, chata yaz**. Her an çevrimiçiyim ve bir saniyede cevap veririm! 🚀`,
-  vi: `Chào **{name}**! Chào mừng bạn đến với **RWA NFT FI** 🌍\n\nTôi là Vera, trợ lý AI của dự án. Tôi sẽ giúp bạn nhanh chóng làm quen với nền tảng, tìm đội ngũ để cùng phát triển và bắt đầu thu nhập từ khai thác (mining).\n\n**Bắt đầu từ đâu ngay bây giờ?**\nHãy xem tin nhắn ghim của chúng tôi và xem video ngắn ở trên.\n\nNếu có bất kỳ câu hỏi nào về nền tảng hoặc token — **hãy nhắn ngay vào đây, trong chat này**. Tôi luôn online và sẽ trả lời bạn trong giây lát! 🚀`,
+  vi: `Chào **{name}**! Chào mừng bạn đến với **RWA NFT FI** 🌍\n\nTôi là Vera, trợ lý AI của dự án. Tôioffset sẽ giúp bạn nhanh chóng làm quen với nền tảng, tìm đội ngũ để cùng phát triển và bắt đầu thu nhập từ khai thác (mining).\n\n**Bắt đầu từ đâu ngay bây giờ?**\nHãy xem tin nhắn ghim của chúng tôi và xem video ngắn ở trên.\n\nNếu có bất kỳ câu hỏi nào về nền tảng hoặc token — **hãy nhắn ngay vào đây, trong chat này**. Tôi luôn online và sẽ trả lời bạn trong giây lát! 🚀`,
   hi: `Namaste, **{name}**! **RWA NFT FI** community mein aapka swagat hai 🌍\n\nMain Vera hun, project ki AI assistant. Main aapko platform par jaldi se set hote, growth ke liye team dhundhne aur mining income shuru karne mein madad karungi.\n\n**Abhi kahan se shuru karein?**\nHamara pinned message dekhein aur upar diya gaya short video dekhein.\n\nAgar platform ya tokens ko lekar koi bhi sawal ho — **toh seedhe yahan, chat mein likhein**. Main hamesha online hun aur ek second mein jawab dungi! 🚀`
 };
 
@@ -196,22 +196,19 @@ async function processIncomingMessage(userId, chatId, userText, msgObjectForForw
   return await askClaude(userId, text, refLink);
 }
 
-// ОБНОВЛЕННЫЙ ПЕРЕХВАТ: Срабатывает при любом изменении статуса (даже при мгновенном ограничении)
+// УМНЫЙ ПЕРЕХВАТ: Ждет, пока человек пройдет капчу Group Help
 bot.on("chat_member", async (update) => {
   const chatId = update.chat.id;
   const member = update.new_chat_member;
 
   if (!member) return;
 
-  // Если старый статус был left/kicked/none, а новый стал member ИЛИ restricted (капча от Group Help)
-  const wasOutside = !update.old_chat_member || 
-                     update.old_chat_member.status === "left" || 
-                     update.old_chat_member.status === "kicked" || 
-                     !update.old_chat_member.status;
+  // Вера сработает ТОЛЬКО тогда, когда старый статус был restricted (капча), а новый стал member (прошел проверку)
+  const passedCaptcha = update.old_chat_member && 
+                        update.old_chat_member.status === "restricted" && 
+                        member.status === "member";
 
-  const isInsideNow = member.status === "member" || member.status === "restricted";
-
-  if (wasOutside && isInsideNow) {
+  if (passedCaptcha) {
     const user = member.user;
     if (user.is_bot) return; // Игнорируем других ботов
 
