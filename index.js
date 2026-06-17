@@ -47,11 +47,12 @@ const WELCOME_TEXTS = {
   de: `Hallo, **{name}**! Willkommen bei **RWA NFT FI** 🌍\n\nIch bin Vera, die KI-Assistentin des Projekts. Ich helfe dir, dich schnell auf der Plattform zurechtzufinden, ein Team für die Entwicklung aufzubauen und dein Mining-Einkommen zu starten.\n\n**Wo soll man jetzt anfangen?**\nLies unsere angepinnte Nachricht und schau dir das kurze Video oben an.\n\nWenn du Fragen zur Plattform oder zu den Token hast — **schreibe sie direkt hier in den Chat**. Ich bin immer online und antworte dir sofort! 🚀`,
   fr: `Bonjour, **{name}**! Bienvenue chez **RWA NFT FI** 🌍\n\nJe suis Vera, l'assistante IA du projet. Je t'aiderai à te familiariser rapidement avec la plateforme, à trouver une équipe pour te développer et à lancer tes revenus de mining.\n\n**Par quoi commencer dès maintenant ?**\nConsulte notre message épinglé et regarde la courte vidéo ci-dessus.\n\nSi tu as des questions sur la plateforme ou les tokens — **écris-les directement ici dans le chat**. Je suis toujours en ligne et je te répondrai en une seconde ! 🚀`,
   es: `¡Hola, **{name}**! Bienvenido a **RWA NFT FI** 🌍\n\nSoy Vera, la asistente de IA del proyecto. Te ayudaré a familiarizarte rápidamente con la plataforma, encontrar un equipo para desarrollarte y lanzar tus ingresos de minería.\n\n**¿Por dónde empezar ahora mismo?**\nRevisa nuestro mensaje fijado y mira el breve video de arriba.\n\nSi tienes alguna pregunta sobre la plataforma o los tokens, **escríbela directamente aquí en el chat**. ¡Siempre estoy en línea y te responderé en un segundo! 🚀`,
-  pt: `Olá, **{name}**! Bem-vindo ao **RWA NFT FI** 🌍\n\nSou Vera, a assistente de IA do projeto. Vou te ajudar a se ambientar rapidamente na plataforma, encontrar uma equipe para evoluir e lançar sua renda com mineração.\n\n**Por onde começar agora mesmo?**\nConfira nossa mensagem fixada e assista ao breve vídeo acima.\n\nSe tiver qualquer dúvida sobre a pf ou tokens — **escreva direto aqui no chat**. Estou sempre online e te respondo em um segundo! 🚀`,
-  it: `Ciao, **{name}**! Benvenuto in **RWA NFT FI** 🌍\n\nSono Vera, l'assistente IA del progetto. Ti aiuterò a orientarti rapidamente sulla piattaforma, trovare un team per crescere e avviare la tua rendita dal mining.\n\n**Da onde iniziare adesso?**\nDai un'occhiata al nostro messaggio in evidenza e guarda il breve video sopra.\n\nSe hai domande sulla piattaforma o sui token — **scrivile direttamente qui in chat**. Sono sempre online e ti risponderò in un secondo! 🚀`,
+  pt: `Olá, **{name}**! Bem-vindo ao **RWA NFT FI** 🌍\n\nSou Vera, a assistente de IA do projeto. Vou te ajudar a se ambientar rapidamente na plataforma, encontrar uma equipe para evoluir e lançar sua renda com mineração.\n\n**Por onde começar agora mesmo?**\nConfira nossa mensagem fixada e assista ao breve vídeo acima.\n\nSe tiver qualquer dúvida sobre a pf ou tokens — **escreva direto aqui no chat**. Estou sempre online` +
+      ` и те respondo em um segundo! 🚀`,
+  it: `Ciao, **{name}**! Benvenuto in **RWA NFT FI** 🌍\n\nSono Vera, l'assistente IA del progetto. Ti aiuterò a orientarti rapidamente sulla piattaforma, trovare un team per crescere e avviare la tua rendita dal mining.\n\n**Da dove iniziare adesso?**\nDai un'occhiata al nostro messaggio in evidenza e guarda il breve video sopra.\n\nSe hai domande sulla piattaforma o sui token — **scrivile direttamente qui in chat**. Sono sempre online e ti risponderò in un secondo! 🚀`,
   zh: `你好，**{name}**！欢迎来到 **RWA NFT FI** 🌍\n\n我是维拉（Vera），项目的 AI 助手。我将帮助您快速熟悉平台、找到共同发展的团队并开启您的挖矿收益。\n\n**现在该如何开始？**\n请查看我们的置顶消息并观看上方的短视频。\n\n如果您对平台或代币有任何疑问 — **请直接在聊天中发送**。我一直在线，会在一秒钟内回复您！🚀`,
   fil: `Hi, **{name}**! Maligayang pagdating sa **RWA NFT FI** 🌍\n\nAko si Vera, ang AI assistant ng proyekto. Tutulungan kitang mabilis na masanay sa platform, makahanap ng koponan para sa paglago, at simulan ang iyong kita sa mining.\n\n**Saan magsisimula ngayon?**\nTingnan ang aming pinned message at panoorin ang maikling video sa itaas.\n\nKung mayroon kang anumang mga katanungan tungkol sa platform o tokens — **i-drop ang mga ito dito mismo sa chat**. Laging akong online at sasagutin kita sa loob ng isang segundo! 🚀`,
-  tr: `Merhaba, **{name}**! **RWA NFT FI** topluluğuna hoş geldin 🌍\n\nBen Vera, projenin yapay zeka asistanıyım. Platforma hızla alışmana, gelişim için bir ekip bulmana vacancies madencilik geliri elde etmene yardımcı olacağım.\n\n**Şu an nereden başlamalısın?**\nYönlendirilmiş mesajımızı incele ve yukarıdaki kısa videoyu izle.\n\nPlatform veya tokenlar hakkında herhangi bir sorun olursa — **doğrudan buraya, chata yaz**. Her an çevrimiçiyim ve bir saniyede cevap veririm! 🚀`,
+  tr: `Merhaba, **{name}**! **RWA NFT FI** topluluğuna hoş geldin 🌍\n\nBen Vera, projenin yapay zeka asistanıyım. Platforma hızla alışmana, gelişim için bir ekip bulmana ve madencilik geliri elde etmene yardımcı olacağım.\n\n**Şu an nereden başlamalısın?**\nYönlendirilmiş mesajımızı incele ve yukarıdaki kısa videoyu izle.\n\nPlatform veya tokenlar hakkında herhangi bir sorun olursa — **doğrudan buraya, chata yaz**. Her an çevrimiçiyim ve bir saniyede cevap veririm! 🚀`,
   vi: `Chào **{name}**! Chào mừng bạn đến với **RWA NFT FI** 🌍\n\nTôi là Vera, trợ lý AI của dự án. Tôi sẽ giúp bạn nhanh chóng làm quen với nền tảng, tìm đội ngũ để cùng phát triển và bắt đầu thu nhập từ khai thác (mining).\n\n**Bắt đầu từ đâu ngay bây giờ?**\nHãy xem tin nhắn ghim của chúng tôi và xem video ngắn ở trên.\n\nNếu có bất kỳ câu hỏi nào về nền tảng hoặc token — **hãy nhắn ngay vào đây, trong chat này**. Tôi luôn online và sẽ trả lời bạn trong giây lát! 🚀`,
   hi: `Namaste, **{name}**! **RWA NFT FI** community mein aapka swagat hai 🌍\n\nMain Vera hun, project ki AI assistant. Main aapko platform par jaldi se set hote, growth ke liye team dhundhne aur mining income shuru karne mein madad karungi.\n\n**Abhi kahan se shuru karein?**\nHamara pinned message dekhein aur upar diya gaya short video dekhein.\n\nAgar platform ya tokens ko lekar koi bhi sawal ho — **toh seedhe yahan, chat mein likhein**. Main hamesha online hun aur ek second mein jawab dungi! 🚀`
 };
@@ -265,7 +266,6 @@ bot.on("new_chat_members", async (msg) => {
     const sendOptions = { parse_mode: "Markdown" };
     if (msg.message_thread_id) sendOptions.message_thread_id = msg.message_thread_id;
 
-    // Если для этого языка загружено видео — отправляем его с подписью
     if (welcomeVideos[lang]) {
       try {
         await bot.sendVideo(chatId, welcomeVideos[lang], { caption: rawText, parse_mode: "Markdown", message_thread_id: msg.message_thread_id });
@@ -288,14 +288,20 @@ bot.on("message", async (msg) => {
     const fileName = msg.video.file_name ? msg.video.file_name.toLowerCase() : "";
     let detectedLang = null;
 
-    if (/[\u4e00-\u9fff]/.test(fileName) || fileName.includes("chinese")) detectedLang = "zh";
-    else if (/[\u0900-\u097f]/.test(fileName) || fileName.includes("hindi")) detectedLang = "hi";
-    else if (/[а-яА-ЯёЁ]/.test(fileName) || fileName.includes("russian")) detectedLang = "ru";
-    else if (fileName.includes("german") || fileName.includes(" de ")) detectedLang = "de";
-    else if (fileName.includes("french") || fileName.includes(" fr ")) detectedLang = "fr";
-    else if (fileName.includes("spanish") || fileName.includes(" es ")) detectedLang = "es";
+    // Сверхточные проверки по ключевым словам из названий файлов
+    if (/[\u4e00-\u9fff]/.test(fileName) || fileName.includes("chinese") || fileName.includes("zh")) detectedLang = "zh";
+    else if (/[\u0900-\u097f]/.test(fileName) || fileName.includes("hindi") || fileName.includes("hi")) detectedLang = "hi";
+    else if (/[а-яА-ЯёЁ]/.test(fileName) || fileName.includes("russian") || fileName.includes("ru")) detectedLang = "ru";
+    else if (fileName.includes("về") || fileName.includes("nền") || fileName.includes("tảng") || fileName.includes("vi")) detectedLang = "vi";
+    else if (fileName.includes("hakkında") || fileName.includes("nedir") || fileName.includes("nasıl") || fileName.includes("tr")) detectedLang = "tr";
+    else if (fileName.includes("sobre_a") || fileName.includes("portuguese") || fileName.includes("pt")) detectedLang = "pt";
+    else if (fileName.includes("sobre_la") || fileName.includes("spanish") || fileName.includes("es")) detectedLang = "es";
+    else if (fileName.includes("sulla") || fileName.includes("piattaforma") || fileName.includes("funziona") || fileName.includes("it")) detectedLang = "it";
+    else if (fileName.includes("german") || fileName.includes("de")) detectedLang = "de";
+    else if (fileName.includes("french") || fileName.includes("fr")) detectedLang = "fr";
+    else if (fileName.includes("filipino") || fileName.includes("fil")) detectedLang = "fil";
     else {
-      const keys = ["en", "de", "fr", "es", "pt", "it", "fil", "tr", "vi"];
+      const keys = ["en", "de", "fr", "es", "pt", "it", "fil", "tr", "vi", "hi", "zh", "ru"];
       detectedLang = keys.find(lang => fileName.includes(lang));
     }
 
