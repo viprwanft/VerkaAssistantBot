@@ -19,18 +19,18 @@ const welcomedUsers = new Set();
 // Fill these in once you have the file_id for each language (sent via bot confirmation).
 // Leave empty string "" for languages without a video yet — bot will fall back to text-only.
 const WELCOME_VIDEOS_FIXED = {
-  ru: "",
-  en: "",
-  de: "",
-  hi: "",
-  zh: "",
-  es: "",
-  fr: "",
-  pt: "",
-  it: "",
-  fil: "",
-  tr: "",
-  vi: "",
+  ru: "BAACAgIAAxkBAAPbajK30h1JR0qBA-BN2f7olUJGmQQAAmumAAJzn5hJwdvLnj8wZN48BA",
+  en: "BAACAgIAAxkBAAPZajK3aSPoL6JzySWW02fCaZXFVzgAAmamAAJzn5hJA0ZpVDT-xgABPAQ",
+  de: "BAACAgIAAxkBAAPdajK4XSjw54jAcca1cHgILguTBDMAAnOmAAJzn5hJukx0g30R7HQ8BA",
+  hi: "BAACAgIAAxkBAAPlajK5aDrXnVdiBGmr3tZ8ZJCNDjQAAn-mAAJzn5hJcqARGyWY6Ec8BA",
+  zh: "BAACAgIAAxkBAAPpajK51S6xYnH-kEfFQ0jMYaKTDMAAAommAAJzn5hJr9JkOZgRqRs8BA",
+  es: "BAACAgIAAxkBAAPfajK4o_2H12I0klTFpU8sBFx5gJkAAnWmAAJzn5hJ56GCsu_TbW88BA",
+  fr: "BAACAgIAAxkBAAPtajK6QehRtFxYNGgBZAbJrVnqCXIAAo6mAAJzn5hJrj3QFcReU0g8BA",
+  pt: "BAACAgIAAxkBAAPnajK5qvr-l6mevSOwov3nQjKb3oYAAoemAAJzn5hJsD8fbGaSgvc8BA",
+  it: "BAACAgIAAxkBAAPhajK44yHkmGKKJ_kjsUtcV_G00xkAAnemAAJzn5hJx859AiNJF-I8BA",
+  fil: "BAACAgIAAxkBAAPjajK5MHbSVwQNwW4DMZMMsmpYhz4AAnmmAAJzn5hJAilngcaz22M8BA",
+  tr: "BAACAgIAAxkBAAPrajK6Eb7nhXSZhBZ9-xX7RRcFpbAAAoymAAJzn5hJXYOsnIvXdHw8BA",
+  vi: "BAACAgIAAxkBAAPvajK6aF3Skwm2BiEyoAxwou3XKU8AApKmAAJzn5hJqh0ewffBmBk8BA",
 };
 
 const VIDEO_DB_PATH = path.join(__dirname, "welcome_videos.json");
