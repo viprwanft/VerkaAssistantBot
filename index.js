@@ -1,4 +1,10 @@
 require("dotenv").config();
+
+// Never let an unhandled promise rejection crash the whole process —
+// just log it and keep the bot running.
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection (caught, not crashing):", reason && reason.message ? reason.message : reason);
+});
 const TelegramBot = require("node-telegram-bot-api");
 const Anthropic = require("@anthropic-ai/sdk");
 const http = require("http");
@@ -194,18 +200,16 @@ bot.on("message", async (msg) => {
       fs.writeFileSync(VIDEO_DB_PATH, JSON.stringify(welcomeVideos, null, 2), "utf8");
       bot.sendMessage(
         msg.chat.id,
-        `✅ Видео для языка **${detectedLang.toUpperCase()}** сохранено!\n\nfile_id (скопируй и пришли мне в чат):\n\`${msg.video.file_id}\``,
-        { parse_mode: "Markdown" }
-      );
+        `✅ Видео для языка ${detectedLang.toUpperCase()} сохранено!\n\nfile_id (скопируй и пришли мне в чат):\n${msg.video.file_id}`
+      ).catch(err => console.error("Confirm message error:", err.message));
       return;
     }
     // If language could not be detected from the file name, still show the file_id
     // so it can be manually mapped to a language.
     bot.sendMessage(
       msg.chat.id,
-      `⚠️ Не удалось определить язык по названию файла.\n\nfile_id (скопируй и пришли мне, укажи язык вручную):\n\`${msg.video.file_id}\``,
-      { parse_mode: "Markdown" }
-    );
+      `⚠️ Не удалось определить язык по названию файла.\n\nfile_id (скопируй и пришли мне, укажи язык вручную):\n${msg.video.file_id}`
+    ).catch(err => console.error("Confirm message error:", err.message));
     return;
   }
   if (!msg.text || msg.text.startsWith("/")) return;
