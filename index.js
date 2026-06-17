@@ -213,6 +213,13 @@ bot.on("message", async (msg) => {
     return;
   }
   if (!msg.text || msg.text.startsWith("/")) return;
+
+  // Temporary debug log: shows the real thread_id for each branch when someone writes in it.
+  // Use this to fill in the correct THREAD_LANG map below, then this log line can be removed.
+  if (msg.chat.type !== "private") {
+    console.log(`[THREAD DEBUG] chat=${msg.chat.id} thread_id=${msg.message_thread_id} text="${msg.text.slice(0, 30)}"`);
+  }
+
   bot.sendChatAction(msg.chat.id, "typing");
 
   const reply = await processIncomingMessage(msg.from.id, msg.chat.id, msg.text.trim());
@@ -231,20 +238,21 @@ http.createServer((req, res) => {
     req.on("end", async () => {
       try {
         const update = JSON.parse(body);
-        // КЛАССИЧЕСКИЙ ПЕРЕХВАТ СЕРВИСНОГО СООБЩЕНИЯ О ВХОДЕ ИЗ КОРНЯ ВЕБХУКА
+        // Handle the join event ONLY via the classic new_chat_members service message.
+        // (The chat_member fallback was removed — it fired on unrelated status changes
+        // like captcha pass/leave/restrict, causing false "welcome" messages.)
         if (update.message && update.message.new_chat_members) {
           const chatId = update.message.chat.id;
           const threadId = update.message.message_thread_id;
+          const adder = update.message.from; // who triggered this service message
+          console.log(`[JOIN DEBUG] chat=${chatId} thread_id=${threadId} new_members=${update.message.new_chat_members.map(m => `${m.first_name}(lang=${m.language_code || "none"})`).join(",")}`);
           for (const memberUser of update.message.new_chat_members) {
-            await triggerDirectWelcome(chatId, memberUser, threadId);
-          }
-        }
-        // Запасной вариант на случай, если Telegram прислал скрытое событие
-        if (update.chat_member) {
-          const chatId = update.chat_member.chat.id;
-          const member = update.chat_member.new_chat_member;
-          if (member && member.status !== "left" && member.status !== "kicked") {
-            await triggerDirectWelcome(chatId, member.user, null);
+            // Only greet if the person joined BY THEMSELVES (adder === the new member).
+            // If someone else added them manually, stay silent.
+            const joinedBySelf = adder && memberUser && adder.id === memberUser.id;
+            if (joinedBySelf) {
+              await triggerDirectWelcome(chatId, memberUser, threadId);
+            }
           }
         }
 
