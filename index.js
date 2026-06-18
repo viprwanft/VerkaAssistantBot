@@ -15,6 +15,9 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const histories = new Map();
 const MAX_HISTORY = 10;
 const welcomedUsers = new Set();
+// Users who just joined but haven't written their first message yet.
+// We wait for their first message to detect their language reliably.
+const pendingWelcome = new Map(); // userId -> { chatId, name, joinedAt }
 // Hardcoded video file_ids per language — survives deploys (unlike the local JSON file).
 // Fill these in once you have the file_id for each language (sent via bot confirmation).
 // Leave empty string "" for languages without a video yet — bot will fall back to text-only.
@@ -151,31 +154,41 @@ async function processIncomingMessage(userId, chatId, userText) {
 async function triggerDirectWelcome(chatId, userObj, threadId) {
   if (!userObj || userObj.is_bot) return;
   const userId = userObj.id;
-  if (!welcomedUsers.has(userId)) {
-    welcomedUsers.add(userId);
+  if (welcomedUsers.has(userId)) return;
+  welcomedUsers.add(userId);
 
-    // Priority: 1) language of the branch/thread they joined, 2) their Telegram app language, 3) English
-    const threadLang = getLangByThread(threadId);
-    const lang = threadLang || normalizeLangCode(userObj.language_code);
+  const name = userObj.first_name || "User";
 
-    const name = userObj.first_name || "User";
-    const rawText = WELCOME_TEXTS[lang].replace("{name}", name);
+  // language_code is never present in chat_member events (confirmed via logs: lang=none).
+  // So we store this user as "pending welcome" and send the greeting when they write
+  // their first message — at that point we can detect language reliably from their text.
+  pendingWelcome.set(userId, { chatId, name, joinedAt: Date.now() });
+  console.log(`[WELCOME PENDING] userId=${userId} name=${name} — waiting for first message to detect language`);
 
-    const sendOptions = { parse_mode: "Markdown" };
-    if (threadId) sendOptions.message_thread_id = threadId;
+  // Clean up stale pending entries after 24h to avoid memory leak
+  setTimeout(() => {
+    if (pendingWelcome.has(userId)) {
+      pendingWelcome.delete(userId);
+      console.log(`[WELCOME EXPIRED] userId=${userId} — never wrote, removed from pending`);
+    }
+  }, 24 * 60 * 60 * 1000);
+}
 
-    // Пауза 5 секунд, чтобы капча отработала первой
-    setTimeout(async () => {
-      if (welcomeVideos[lang]) {
-        try {
-          await bot.sendVideo(chatId, welcomeVideos[lang], { ...sendOptions, caption: rawText });
-        } catch (err) {
-          await bot.sendMessage(chatId, rawText, sendOptions);
-        }
-      } else {
-        await bot.sendMessage(chatId, rawText, sendOptions);
-      }
-    }, 5000);
+// Send the actual welcome message + video once we know the user's language.
+async function sendWelcome(chatId, userId, name, lang, threadId) {
+  const rawText = (WELCOME_TEXTS[lang] || WELCOME_TEXTS.en).replace("{name}", name);
+  const sendOptions = { parse_mode: "Markdown" };
+  if (threadId) sendOptions.message_thread_id = threadId;
+
+  if (welcomeVideos[lang]) {
+    try {
+      await bot.sendVideo(chatId, welcomeVideos[lang], { ...sendOptions, caption: rawText });
+    } catch (err) {
+      console.error("sendWelcome video error:", err.message);
+      await bot.sendMessage(chatId, rawText, sendOptions).catch(e => console.error("sendWelcome text error:", e.message));
+    }
+  } else {
+    await bot.sendMessage(chatId, rawText, sendOptions).catch(e => console.error("sendWelcome text error:", e.message));
   }
 }
 
@@ -215,9 +228,17 @@ bot.on("message", async (msg) => {
   if (!msg.text || msg.text.startsWith("/")) return;
 
   // Temporary debug log: shows the real thread_id for each branch when someone writes in it.
-  // Use this to fill in the correct THREAD_LANG map below, then this log line can be removed.
   if (msg.chat.type !== "private") {
     console.log(`[THREAD DEBUG] chat=${msg.chat.id} thread_id=${msg.message_thread_id} text="${msg.text.slice(0, 30)}"`);
+  }
+
+  // If this is the user's first message after joining — send the welcome now that we know their language.
+  if (msg.from && pendingWelcome.has(msg.from.id)) {
+    const pending = pendingWelcome.get(msg.from.id);
+    pendingWelcome.delete(msg.from.id);
+    const lang = detectLang(msg.text);
+    console.log(`[WELCOME SEND] userId=${msg.from.id} name=${pending.name} lang=${lang} — first message detected`);
+    await sendWelcome(pending.chatId, msg.from.id, pending.name, lang, msg.message_thread_id || null);
   }
 
   bot.sendChatAction(msg.chat.id, "typing");
@@ -280,11 +301,14 @@ http.createServer((req, res) => {
           const memberUser = update.chat_member.new_chat_member && update.chat_member.new_chat_member.user;
           console.log(`[JOIN DEBUG via chat_member] chat=${chatId} user=${memberUser ? memberUser.first_name : "?"} lang=${memberUser ? (memberUser.language_code || "none") : "?"} ${oldStatus} -> ${newStatus} (changed_by=${update.chat_member.from ? update.chat_member.from.first_name : "?"})`);
 
-          // The real "joined and passed captcha" moment: transitioning INTO "member"
-          // FROM something that wasn't already "member" (covers restricted -> member,
-          // left -> member, or no prior record -> member).
-          const justBecameMember = newStatus === "member" && oldStatus !== "member";
-          if (justBecameMember && memberUser && !memberUser.is_bot) {
+          // Only trigger welcome when Group Help promotes the user from "restricted" to "member"
+          // — that's the exact moment they passed the captcha. Ignore earlier transitions
+          // like "left -> member" which happen before Group Help has processed them.
+          const captchaPassed = newStatus === "member"
+            && oldStatus === "restricted"
+            && update.chat_member.from
+            && update.chat_member.from.is_bot;
+          if (captchaPassed && memberUser && !memberUser.is_bot) {
             await triggerDirectWelcome(chatId, memberUser, null);
           }
         }
