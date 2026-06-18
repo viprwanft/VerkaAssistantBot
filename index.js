@@ -269,22 +269,18 @@ bot.on("message", async (msg) => {
 
   bot.sendChatAction(msg.chat.id, "typing");
 
+  // Try up to 5 times with increasing delays — no error message to user, just silent retries
   let reply = null;
-  try {
-    reply = await processIncomingMessage(msg.from.id, msg.chat.id, msg.text.trim());
-  } catch (err) {
-    console.error("processIncomingMessage error:", err.message);
-    // One retry — most failures here are transient network blips (Premature close, ECONNRESET)
+  for (let attempt = 1; attempt <= 5; attempt++) {
     try {
       reply = await processIncomingMessage(msg.from.id, msg.chat.id, msg.text.trim());
-    } catch (err2) {
-      console.error("processIncomingMessage retry failed:", err2.message);
-      const lang = detectLang(msg.text);
-      const fallbackTexts = {
-        ru: "Извините, временный сбой связи. Повторите вопрос, пожалуйста 🙏",
-        en: "Sorry, a temporary connection issue occurred. Please ask again 🙏",
-      };
-      reply = fallbackTexts[lang] || fallbackTexts.en;
+      break; // success
+    } catch (err) {
+      console.error(`Message handler attempt ${attempt} failed: ${err.message}`);
+      if (attempt < 5) {
+        await new Promise(r => setTimeout(r, attempt * 3000)); // 3s, 6s, 9s, 12s
+        bot.sendChatAction(msg.chat.id, "typing").catch(() => {});
+      }
     }
   }
 
