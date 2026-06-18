@@ -222,11 +222,29 @@ bot.on("message", async (msg) => {
 
   bot.sendChatAction(msg.chat.id, "typing");
 
-  const reply = await processIncomingMessage(msg.from.id, msg.chat.id, msg.text.trim());
+  let reply = null;
+  try {
+    reply = await processIncomingMessage(msg.from.id, msg.chat.id, msg.text.trim());
+  } catch (err) {
+    console.error("processIncomingMessage error:", err.message);
+    // One retry — most failures here are transient network blips (Premature close, ECONNRESET)
+    try {
+      reply = await processIncomingMessage(msg.from.id, msg.chat.id, msg.text.trim());
+    } catch (err2) {
+      console.error("processIncomingMessage retry failed:", err2.message);
+      const lang = detectLang(msg.text);
+      const fallbackTexts = {
+        ru: "Извините, временный сбой связи. Повторите вопрос, пожалуйста 🙏",
+        en: "Sorry, a temporary connection issue occurred. Please ask again 🙏",
+      };
+      reply = fallbackTexts[lang] || fallbackTexts.en;
+    }
+  }
+
   if (reply) {
     const sendOptions = { reply_to_message_id: msg.message_id, parse_mode: "Markdown" };
     if (msg.message_thread_id) sendOptions.message_thread_id = msg.message_thread_id;
-    bot.sendMessage(msg.chat.id, reply, sendOptions);
+    bot.sendMessage(msg.chat.id, reply, sendOptions).catch(err => console.error("sendMessage error:", err.message));
   }
 });
 const PORT = process.env.PORT || 3000;
@@ -260,7 +278,7 @@ http.createServer((req, res) => {
           const oldStatus = update.chat_member.old_chat_member && update.chat_member.old_chat_member.status;
           const newStatus = update.chat_member.new_chat_member && update.chat_member.new_chat_member.status;
           const memberUser = update.chat_member.new_chat_member && update.chat_member.new_chat_member.user;
-          console.log(`[JOIN DEBUG via chat_member] chat=${chatId} user=${memberUser ? memberUser.first_name : "?"} ${oldStatus} -> ${newStatus} (changed_by=${update.chat_member.from ? update.chat_member.from.first_name : "?"})`);
+          console.log(`[JOIN DEBUG via chat_member] chat=${chatId} user=${memberUser ? memberUser.first_name : "?"} lang=${memberUser ? (memberUser.language_code || "none") : "?"} ${oldStatus} -> ${newStatus} (changed_by=${update.chat_member.from ? update.chat_member.from.first_name : "?"})`);
 
           // The real "joined and passed captcha" moment: transitioning INTO "member"
           // FROM something that wasn't already "member" (covers restricted -> member,
