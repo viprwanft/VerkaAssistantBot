@@ -130,15 +130,28 @@ function addToHistory(userId, role, content) {
 }
 async function askClaude(userId, userMessage, refLink) {
   addToHistory(userId, "user", userMessage);
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-5",
-    max_tokens: 1024,
-    system: SYSTEM_PROMPT + `\n\nREF LINK FOR THIS USER: ${refLink}`,
-    messages: getHistory(userId),
-  });
-  const reply = response.content[0].text;
-  addToHistory(userId, "assistant", reply);
-  return reply;
+  let lastErr;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const response = await anthropic.messages.create({
+        model: "claude-sonnet-4-5",
+        max_tokens: 1024,
+        system: SYSTEM_PROMPT + `\n\nREF LINK FOR THIS USER: ${refLink}`,
+        messages: getHistory(userId),
+      });
+      const reply = response.content[0].text;
+      addToHistory(userId, "assistant", reply);
+      return reply;
+    } catch (err) {
+      lastErr = err;
+      console.error(`askClaude attempt ${attempt} failed: ${err.message}`);
+      if (attempt < 3) await new Promise(r => setTimeout(r, attempt * 2000)); // 2s, 4s delay
+    }
+  }
+  // Remove the failed user message from history to avoid corrupted state
+  const history = getHistory(userId);
+  if (history.length > 0 && history[history.length - 1].role === "user") history.pop();
+  throw lastErr;
 }
 async function processIncomingMessage(userId, chatId, userText) {
   const text = userText.replace(/@\w+/g, "").trim();
@@ -159,19 +172,32 @@ async function triggerDirectWelcome(chatId, userObj, threadId) {
 
   const name = userObj.first_name || "User";
 
-  // language_code is never present in chat_member events (confirmed via logs: lang=none).
-  // So we store this user as "pending welcome" and send the greeting when they write
-  // their first message — at that point we can detect language reliably from their text.
-  pendingWelcome.set(userId, { chatId, name, joinedAt: Date.now() });
-  console.log(`[WELCOME PENDING] userId=${userId} name=${name} — waiting for first message to detect language`);
+  // language_code is not sent in chat_member events (lang=none confirmed via logs).
+  // Try getChat — works if user has previously messaged the bot in private.
+  try {
+    const userInfo = await bot.getChat(userId);
+    if (userInfo && userInfo.language_code) {
+      const lang = normalizeLangCode(userInfo.language_code);
+      console.log(`[WELCOME SEND IMMEDIATE] userId=${userId} name=${name} lang=${lang} via getChat`);
+      await sendWelcome(chatId, userId, name, lang, null);
+      return;
+    }
+  } catch (err) {
+    console.log(`[WELCOME getChat failed] userId=${userId}: ${err.message}`);
+  }
 
-  // Clean up stale pending entries after 24h to avoid memory leak
+  // getChat didn't have language_code — wait for first message to detect language
+  pendingWelcome.set(userId, { chatId, name, joinedAt: Date.now() });
+  console.log(`[WELCOME PENDING] userId=${userId} name=${name} — waiting for first message`);
+
+  // After 10 minutes of silence — send English as last resort
   setTimeout(() => {
     if (pendingWelcome.has(userId)) {
       pendingWelcome.delete(userId);
-      console.log(`[WELCOME EXPIRED] userId=${userId} — never wrote, removed from pending`);
+      sendWelcome(chatId, userId, name, "en", null);
+      console.log(`[WELCOME FALLBACK en] userId=${userId} — sent after 10min timeout`);
     }
-  }, 24 * 60 * 60 * 1000);
+  }, 10 * 60 * 1000);
 }
 
 // Send the actual welcome message + video once we know the user's language.
