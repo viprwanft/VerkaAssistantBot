@@ -238,21 +238,36 @@ http.createServer((req, res) => {
     req.on("end", async () => {
       try {
         const update = JSON.parse(body);
-        // Handle the join event ONLY via the classic new_chat_members service message.
-        // (The chat_member fallback was removed — it fired on unrelated status changes
-        // like captcha pass/leave/restrict, causing false "welcome" messages.)
+        // This group does NOT send the classic new_chat_members service message at all —
+        // confirmed via getUpdates: only chat_member events are sent, because Group Help's
+        // captcha flow puts new users into "restricted" first, then promotes them to "member"
+        // once they pass the captcha. So we treat THAT specific transition as "joined".
         if (update.message && update.message.new_chat_members) {
           const chatId = update.message.chat.id;
           const threadId = update.message.message_thread_id;
           const adder = update.message.from; // who triggered this service message
-          console.log(`[JOIN DEBUG] chat=${chatId} thread_id=${threadId} new_members=${update.message.new_chat_members.map(m => `${m.first_name}(lang=${m.language_code || "none"})`).join(",")}`);
+          console.log(`[JOIN DEBUG via message] chat=${chatId} thread_id=${threadId} new_members=${update.message.new_chat_members.map(m => `${m.first_name}(lang=${m.language_code || "none"})`).join(",")}`);
           for (const memberUser of update.message.new_chat_members) {
-            // Only greet if the person joined BY THEMSELVES (adder === the new member).
-            // If someone else added them manually, stay silent.
             const joinedBySelf = adder && memberUser && adder.id === memberUser.id;
             if (joinedBySelf) {
               await triggerDirectWelcome(chatId, memberUser, threadId);
             }
+          }
+        }
+
+        if (update.chat_member) {
+          const chatId = update.chat_member.chat.id;
+          const oldStatus = update.chat_member.old_chat_member && update.chat_member.old_chat_member.status;
+          const newStatus = update.chat_member.new_chat_member && update.chat_member.new_chat_member.status;
+          const memberUser = update.chat_member.new_chat_member && update.chat_member.new_chat_member.user;
+          console.log(`[JOIN DEBUG via chat_member] chat=${chatId} user=${memberUser ? memberUser.first_name : "?"} ${oldStatus} -> ${newStatus} (changed_by=${update.chat_member.from ? update.chat_member.from.first_name : "?"})`);
+
+          // The real "joined and passed captcha" moment: transitioning INTO "member"
+          // FROM something that wasn't already "member" (covers restricted -> member,
+          // left -> member, or no prior record -> member).
+          const justBecameMember = newStatus === "member" && oldStatus !== "member";
+          if (justBecameMember && memberUser && !memberUser.is_bot) {
+            await triggerDirectWelcome(chatId, memberUser, null);
           }
         }
 
