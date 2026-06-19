@@ -2,6 +2,9 @@
   "name": "rwa-nft-fi-telegram-bot",
   "version": "1.0.0",
   "main": "index.js",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "start": "node index.js"
   },
