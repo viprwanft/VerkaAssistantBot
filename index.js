@@ -7,26 +7,15 @@ process.on("unhandledRejection", (reason) => {
 });
 const TelegramBot = require("node-telegram-bot-api");
 const Anthropic = require("@anthropic-ai/sdk");
-const { Agent: UndiciAgent } = require("undici");
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
 
-// "Premature close" errors are a known symptom of undici reusing stale pooled
-// connections on unstable hosts (like Render's free tier). A short keep-alive
-// timeout forces fresh connections more often, avoiding stale-connection errors.
-const anthropicDispatcher = new UndiciAgent({
-  keepAliveTimeout: 1,        // close idle connections almost immediately
-  keepAliveMaxTimeout: 1000,
-  connect: { timeout: 30 * 1000 },
-});
-
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
   timeout: 90 * 1000, // 90s timeout per request
-  maxRetries: 2,      // let the SDK's own retry logic handle transient network errors
-  fetchOptions: { dispatcher: anthropicDispatcher },
+  maxRetries: 3,      // SDK's own retry logic handles transient network errors
 });
 const histories = new Map();
 const MAX_HISTORY = 10;
