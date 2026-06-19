@@ -11,7 +11,11 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+  timeout: 60 * 1000, // 60s timeout per request
+  maxRetries: 4,      // let the SDK's own retry logic handle transient network errors
+});
 const histories = new Map();
 const MAX_HISTORY = 10;
 const welcomedUsers = new Set();
