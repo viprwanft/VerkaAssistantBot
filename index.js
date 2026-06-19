@@ -7,14 +7,26 @@ process.on("unhandledRejection", (reason) => {
 });
 const TelegramBot = require("node-telegram-bot-api");
 const Anthropic = require("@anthropic-ai/sdk");
+const { Agent: UndiciAgent } = require("undici");
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
+
+// "Premature close" errors are a known symptom of undici reusing stale pooled
+// connections on unstable hosts (like Render's free tier). A short keep-alive
+// timeout forces fresh connections more often, avoiding stale-connection errors.
+const anthropicDispatcher = new UndiciAgent({
+  keepAliveTimeout: 1,        // close idle connections almost immediately
+  keepAliveMaxTimeout: 1000,
+  connect: { timeout: 30 * 1000 },
+});
+
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
-  timeout: 60 * 1000, // 60s timeout per request
-  maxRetries: 4,      // let the SDK's own retry logic handle transient network errors
+  timeout: 90 * 1000, // 90s timeout per request
+  maxRetries: 2,      // let the SDK's own retry logic handle transient network errors
+  fetchOptions: { dispatcher: anthropicDispatcher },
 });
 const histories = new Map();
 const MAX_HISTORY = 10;
@@ -134,28 +146,23 @@ function addToHistory(userId, role, content) {
 }
 async function askClaude(userId, userMessage, refLink) {
   addToHistory(userId, "user", userMessage);
-  let lastErr;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      const response = await anthropic.messages.create({
-        model: "claude-sonnet-4-5",
-        max_tokens: 1024,
-        system: SYSTEM_PROMPT + `\n\nREF LINK FOR THIS USER: ${refLink}`,
-        messages: getHistory(userId),
-      });
-      const reply = response.content[0].text;
-      addToHistory(userId, "assistant", reply);
-      return reply;
-    } catch (err) {
-      lastErr = err;
-      console.error(`askClaude attempt ${attempt} failed: ${err.message}`);
-      if (attempt < 3) await new Promise(r => setTimeout(r, attempt * 2000)); // 2s, 4s delay
-    }
+  try {
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-4-5",
+      max_tokens: 1024,
+      system: SYSTEM_PROMPT + `\n\nREF LINK FOR THIS USER: ${refLink}`,
+      messages: getHistory(userId),
+    });
+    const reply = response.content[0].text;
+    addToHistory(userId, "assistant", reply);
+    return reply;
+  } catch (err) {
+    console.error(`askClaude failed: ${err.message}`);
+    // Remove the failed user message from history to avoid corrupted state
+    const history = getHistory(userId);
+    if (history.length > 0 && history[history.length - 1].role === "user") history.pop();
+    throw err;
   }
-  // Remove the failed user message from history to avoid corrupted state
-  const history = getHistory(userId);
-  if (history.length > 0 && history[history.length - 1].role === "user") history.pop();
-  throw lastErr;
 }
 async function processIncomingMessage(userId, chatId, userText) {
   const text = userText.replace(/@\w+/g, "").trim();
@@ -273,18 +280,18 @@ bot.on("message", async (msg) => {
 
   bot.sendChatAction(msg.chat.id, "typing");
 
-  // Try up to 5 times with increasing delays — no error message to user, just silent retries
+  // SDK already retries internally (maxRetries: 2). Just one outer retry as a safety net.
   let reply = null;
-  for (let attempt = 1; attempt <= 5; attempt++) {
+  try {
+    reply = await processIncomingMessage(msg.from.id, msg.chat.id, msg.text.trim());
+  } catch (err) {
+    console.error(`Message handler attempt 1 failed: ${err.message}`);
     try {
+      await new Promise(r => setTimeout(r, 3000));
+      bot.sendChatAction(msg.chat.id, "typing").catch(() => {});
       reply = await processIncomingMessage(msg.from.id, msg.chat.id, msg.text.trim());
-      break; // success
-    } catch (err) {
-      console.error(`Message handler attempt ${attempt} failed: ${err.message}`);
-      if (attempt < 5) {
-        await new Promise(r => setTimeout(r, attempt * 3000)); // 3s, 6s, 9s, 12s
-        bot.sendChatAction(msg.chat.id, "typing").catch(() => {});
-      }
+    } catch (err2) {
+      console.error(`Message handler attempt 2 failed: ${err2.message}`);
     }
   }
 
