@@ -246,11 +246,16 @@ function getHistory(userId) {
   return histories.get(userId);
 }
 function addToHistory(userId, role, content) {
+  // Anthropic API rejects empty-string content — never let a blank message into history,
+  // or every future request for this user will fail with "content: Field required".
+  if (!content || !String(content).trim()) return;
   const history = getHistory(userId);
   history.push({ role, content });
   if (history.length > MAX_HISTORY * 2) history.splice(0, history.length - MAX_HISTORY * 2);
 }
 async function askClaude(userId, userMessage, refLink) {
+  // Guard at the entry point too — an empty message should never reach the API.
+  if (!userMessage || !String(userMessage).trim()) return null;
   addToHistory(userId, "user", userMessage);
   try {
     const response = await anthropic.messages.create({
@@ -259,7 +264,10 @@ async function askClaude(userId, userMessage, refLink) {
       system: SYSTEM_PROMPT + `\n\nREGISTRATION LINK FOR THIS USER (use this exact link when user asks to register or join the platform): ${refLink}`,
       messages: getHistory(userId),
     });
-    const reply = response.content[0].text;
+    const reply = response.content && response.content[0] && response.content[0].text
+      ? response.content[0].text
+      : null;
+    if (!reply) throw new Error("Empty response content from Claude");
     addToHistory(userId, "assistant", reply);
     return reply;
   } catch (err) {
@@ -272,6 +280,9 @@ async function askClaude(userId, userMessage, refLink) {
 }
 async function processIncomingMessage(userId, chatId, userText) {
   const text = userText.replace(/@\w+/g, "").trim();
+  // If stripping the @mention left nothing (e.g. user only typed "@VeraBot"), skip entirely —
+  // this is what was corrupting histories with empty content and breaking every later request.
+  if (!text) return null;
 
   // Detect language and save it per user — so ref link stays consistent
   // even when short messages can't be reliably detected
