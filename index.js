@@ -111,6 +111,8 @@ const REG_KEYWORDS = [
   "trademark", "товарный знак", "brandbook", "брендбук",
   // FinFlow product
   "finflow", "фин флоу", "финфлоу", "fin pro", "фин про", "compound", "компаунд", "earn cap",
+  // Webinar & giveaway
+  "розыгрыш", "вебинар", "webinar", "giveaway", "приз", "prize", "конкурс",
   // Italian/Spanish/French/German/etc equivalents
   "documento", "libro blanco", "registrazione", "registrarse", "enregistrement",
   "dokument", "weissbuch", "registrierung"
@@ -216,7 +218,14 @@ IMPORTANT — always frame these as targets, never guarantees:
 
 Details and full breakdown: https://finflow-story.netlify.app/
 
-TRUST AND SECURITY:
+FREE WEBINAR AND GIVEAWAY — recommend this as a great starting point for newcomers:
+There's a free live webinar on making smarter financial decisions instead of chasing loud promises — it covers diversification, how to analyze projects, why not to put everything into one instrument, and how to spot questionable offers and reduce risk. A $1000 total prize pool is raffled live among attendees during the call.
+Registration (required, separate from the platform): https://rwa100bonus.vercel.app/
+Zoom link: https://us02web.zoom.us/j/6359135949?pwd=gzMMgsXsVDk2Y8uGMlyynrl3yp9zd3.1
+Important conditions for the giveaway — always mention these when someone asks about the giveaway: registering alone is not enough, you must be present live on the Zoom call at the moment of the draw, and you must raise your hand during the call so the hosts see you're there. If a winner is not present or does not confirm, the prize is redrawn immediately among the rest.
+When someone is brand new, unsure where to start, hesitant, or asks "how do I begin" — proactively suggest starting from scratch with this webinar: it's free, teaches the fundamentals (diversification, project analysis, spotting scams) before they commit any money, and gives them a shot at the $1000 giveaway along the way. Frame it as a low-pressure first step, not a sales pitch.
+
+
 - CertiK audit, May 2026: 73 findings, 55 resolved, 1 critical finding fixed
 - UK Trademark: UK00004369823
 - DAO governance: 20 Guardians + multisig 2/3
@@ -294,7 +303,7 @@ async function processIncomingMessage(userId, chatId, userText) {
   const refLink = getRefLink(lang);
 
   if (isRegQuestion(text)) {
-    return await askClaude(userId, `The user asks about a document, registration, product info, or wants links. Reply in their language. Official website: https://rwanftfi.com — for registration use the personal link: ${refLink} — also share relevant links:\n- Whitepaper: https://whitepaper.rwanftfi.com\n- Resources: https://app.rwanftfi.com/resources\n- CertiK audit: https://skynet.certik.com/projects/rwanftfi\n- Smart Contracts: https://app.rwanftfi.com/smart-contracts\n- FinFlow: https://finflow-story.netlify.app/`, refLink);
+    return await askClaude(userId, `The user asks about a document, registration, product info, or wants links. Reply in their language. Official website: https://rwanftfi.com — for registration use the personal link: ${refLink} — also share relevant links:\n- Whitepaper: https://whitepaper.rwanftfi.com\n- Resources: https://app.rwanftfi.com/resources\n- CertiK audit: https://skynet.certik.com/projects/rwanftfi\n- Smart Contracts: https://app.rwanftfi.com/smart-contracts\n- FinFlow: https://finflow-story.netlify.app/\n- Free webinar + $1000 giveaway registration: https://rwa100bonus.vercel.app/`, refLink);
   }
   return await askClaude(userId, text, refLink);
 }
