@@ -261,7 +261,6 @@ async function askClaude(userId, userMessage, refLink) {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
       max_tokens: 1024,
-      effort: "low", // Sonnet 5 defaults to "high" (deep reasoning) — overkill and slower/costlier for short chat replies
       system: SYSTEM_PROMPT + `\n\nREGISTRATION LINK FOR THIS USER (use this exact link when user asks to register or join the platform): ${refLink}`,
       messages: getHistory(userId),
     });
