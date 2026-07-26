@@ -261,12 +261,12 @@ async function askClaude(userId, userMessage, refLink) {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
       max_tokens: 1024,
+      effort: "low", // Sonnet 5 defaults to "high" (deep reasoning) — overkill and slower/costlier for short chat replies
       system: SYSTEM_PROMPT + `\n\nREGISTRATION LINK FOR THIS USER (use this exact link when user asks to register or join the platform): ${refLink}`,
       messages: getHistory(userId),
     });
-    const reply = response.content && response.content[0] && response.content[0].text
-      ? response.content[0].text
-      : null;
+    const textBlock = response.content && response.content.find(block => block.type === "text");
+    const reply = textBlock && textBlock.text ? textBlock.text : null;
     if (!reply) throw new Error("Empty response content from Claude");
     addToHistory(userId, "assistant", reply);
     return reply;
