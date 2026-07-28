@@ -463,18 +463,22 @@ http.createServer((req, res) => {
 
         if (update.chat_member) {
           const chatId = update.chat_member.chat.id;
-          const oldStatus = update.chat_member.old_chat_member && update.chat_member.old_chat_member.status;
-          const newStatus = update.chat_member.new_chat_member && update.chat_member.new_chat_member.status;
-          const memberUser = update.chat_member.new_chat_member && update.chat_member.new_chat_member.user;
-          console.log(`[JOIN DEBUG via chat_member] chat=${chatId} user=${memberUser ? memberUser.first_name : "?"} lang=${memberUser ? (memberUser.language_code || "none") : "?"} ${oldStatus} -> ${newStatus} (changed_by=${update.chat_member.from ? update.chat_member.from.first_name : "?"})`);
+          const oldMember = update.chat_member.old_chat_member;
+          const newMember = update.chat_member.new_chat_member;
+          const oldStatus = oldMember && oldMember.status;
+          const newStatus = newMember && newMember.status;
+          const memberUser = newMember && newMember.user;
+          console.log(`[JOIN DEBUG via chat_member] chat=${chatId} user=${memberUser ? memberUser.first_name : "?"} lang=${memberUser ? (memberUser.language_code || "none") : "?"} ${oldStatus} -> ${newStatus} (changed_by=${update.chat_member.from ? update.chat_member.from.first_name : "?"}, from_is_bot=${update.chat_member.from ? update.chat_member.from.is_bot : "?"})`);
+          // Extra diagnostics: dump raw permission flags so we can see exactly what
+          // Group Help sends when it unrestricts someone (helps tune the condition below).
+          console.log(`[JOIN DEBUG permissions] old=${JSON.stringify(oldMember)} new=${JSON.stringify(newMember)}`);
 
-          // Only trigger welcome when Group Help promotes the user from "restricted" to "member"
-          // — that's the exact moment they passed the captcha. Ignore earlier transitions
-          // like "left -> member" which happen before Group Help has processed them.
-          const captchaPassed = newStatus === "member"
-            && oldStatus === "restricted"
-            && update.chat_member.from
-            && update.chat_member.from.is_bot;
+          // Trigger welcome the moment a user stops being "restricted" — i.e. the captcha
+          // gate is lifted, regardless of the exact new status or who performed the action.
+          // (Previously this also required from.is_bot === true, which was too strict —
+          // Group Help doesn't always attribute the change the same way, so real captcha
+          // passes were being missed.)
+          const captchaPassed = oldStatus === "restricted" && newStatus !== "restricted" && newStatus !== "left" && newStatus !== "kicked";
           if (captchaPassed && memberUser && !memberUser.is_bot) {
             await triggerDirectWelcome(chatId, memberUser, null);
           }
