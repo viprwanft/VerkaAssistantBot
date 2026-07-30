@@ -438,6 +438,12 @@ bot.on("message", async (msg) => {
 const PORT = process.env.PORT || 3000;
 const RENDER_URL = "https://verkaassistantbot-b0uq.onrender.com";
 http.createServer((req, res) => {
+  // If the caller (e.g. the bot-builder platform) gives up and closes the connection
+  // before we respond — which happens a lot on Render's free tier while the instance
+  // is waking up from sleep — writing to that closed socket would otherwise throw an
+  // unhandled error and could crash the process. Just log and move on.
+  res.on("error", (err) => console.error("Response socket error (client likely disconnected):", err.message));
+
   if (req.url === `/bot${process.env.TELEGRAM_BOT_TOKEN}` && req.method === "POST") {
     let body = "";
     req.on("data", chunk => { body += chunk; });
@@ -496,7 +502,8 @@ http.createServer((req, res) => {
 
   // /vera — external integration endpoint for the info-bot (e.g. SendPulse flow builder).
   // This is what "Запрос API" nodes hit with the user's question and expect a reply back.
-  // Accepts the question via a GET query param (?text=...) or a POST JSON body ({"text": "..."}).
+  // Accepts the question via a GET query param (?text=... or ?message=...) or a POST JSON
+  // body ({"text": "..."} or {"message": "..."} — SendPulse's default preset uses "message").
   // Optionally accepts a "user_id" so different chat users get separate conversation history —
   // without it, all info-bot users share one running history (fine for occasional Q&A, but
   // if this bot gets heavy traffic, pass a stable per-user id from the flow builder).
@@ -510,18 +517,22 @@ http.createServer((req, res) => {
 
         const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
         if (parsedUrl.searchParams.get("text")) text = parsedUrl.searchParams.get("text");
+        else if (parsedUrl.searchParams.get("message")) text = parsedUrl.searchParams.get("message");
         if (parsedUrl.searchParams.get("user_id")) sessionKey = `infobot-${parsedUrl.searchParams.get("user_id")}`;
 
         if (!text && body) {
           try {
             const parsedBody = JSON.parse(body);
             if (parsedBody.text) text = parsedBody.text;
+            else if (parsedBody.message) text = parsedBody.message;
             if (parsedBody.user_id) sessionKey = `infobot-${parsedBody.user_id}`;
           } catch (e) {
             // Not JSON — treat the raw body as the question text.
             if (body.trim()) text = body.trim();
           }
         }
+
+        console.log(`[/vera REQUEST] method=${req.method} sessionKey=${sessionKey} textPreview="${(text || "").slice(0, 60)}" rawBody=${body.slice(0, 200)}`);
 
         if (!text || !text.trim()) {
           res.writeHead(200, { "Content-Type": "application/json" });
