@@ -493,6 +493,63 @@ http.createServer((req, res) => {
     });
     return;
   }
+
+  // /vera — external integration endpoint for the info-bot (e.g. SendPulse flow builder).
+  // This is what "Запрос API" nodes hit with the user's question and expect a reply back.
+  // Accepts the question via a GET query param (?text=...) or a POST JSON body ({"text": "..."}).
+  // Optionally accepts a "user_id" so different chat users get separate conversation history —
+  // without it, all info-bot users share one running history (fine for occasional Q&A, but
+  // if this bot gets heavy traffic, pass a stable per-user id from the flow builder).
+  if (req.url.split("?")[0] === "/vera") {
+    let body = "";
+    req.on("data", chunk => { body += chunk; });
+    req.on("end", async () => {
+      try {
+        let text = "";
+        let sessionKey = "infobot-shared";
+
+        const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+        if (parsedUrl.searchParams.get("text")) text = parsedUrl.searchParams.get("text");
+        if (parsedUrl.searchParams.get("user_id")) sessionKey = `infobot-${parsedUrl.searchParams.get("user_id")}`;
+
+        if (!text && body) {
+          try {
+            const parsedBody = JSON.parse(body);
+            if (parsedBody.text) text = parsedBody.text;
+            if (parsedBody.user_id) sessionKey = `infobot-${parsedBody.user_id}`;
+          } catch (e) {
+            // Not JSON — treat the raw body as the question text.
+            if (body.trim()) text = body.trim();
+          }
+        }
+
+        if (!text || !text.trim()) {
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ vera_reply: "", text: "", reply: "" }));
+          return;
+        }
+
+        const lang = detectLang(text);
+        const refLink = getRefLink(lang);
+        const replyText = await askClaude(sessionKey, text.trim(), refLink);
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({
+          vera_reply: replyText || "",
+          text: replyText || "",
+          reply: replyText || "",
+          message: replyText || "",
+        }));
+      } catch (e) {
+        console.error("/vera endpoint error:", e.message);
+        const fallback = "Извини, сейчас не получилось ответить. Попробуй, пожалуйста, ещё раз через минуту.";
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ vera_reply: fallback, text: fallback, reply: fallback, message: fallback }));
+      }
+    });
+    return;
+  }
+
   res.writeHead(200); res.end("OK");
 }).listen(PORT, async () => {
   try {
