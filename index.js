@@ -51,18 +51,18 @@ for (const lang in WELCOME_VIDEOS_FIXED) {
   if (WELCOME_VIDEOS_FIXED[lang]) welcomeVideos[lang] = WELCOME_VIDEOS_FIXED[lang];
 }
 const REF_LINKS = {
-  en: 'https://app.rwanftfi.com/?ref=ProCripto',
-  hi: 'https://app.rwanftfi.com/?ref=ProCripto',
-  de: 'https://app.rwanftfi.com/?ref=ProCripto',
-  ru: 'https://app.rwanftfi.com/?ref=ProCripto',
-  zh: 'https://app.rwanftfi.com/?ref=KorzhTRAFF',
-  es: 'https://app.rwanftfi.com/?ref=KorzhTRAFF',
-  fr: 'https://app.rwanftfi.com/?ref=KorzhTRAFF',
-  pt: 'https://app.rwanftfi.com/?ref=KorzhTRAFF',
-  it: 'https://app.rwanftfi.com/?ref=PereudaDS',
-  fil: 'https://app.rwanftfi.com/?ref=PereudaDS',
-  tr: 'https://app.rwanftfi.com/?ref=PereudaDS',
-  vi: 'https://app.rwanftfi.com/?ref=PereudaDS',
+  en: 'https://share.rwanftfi.com/?ref=ProCripto',
+  hi: 'https://share.rwanftfi.com/?ref=ProCripto',
+  de: 'https://share.rwanftfi.com/?ref=ProCripto',
+  ru: 'https://share.rwanftfi.com/?ref=ProCripto',
+  zh: 'https://share.rwanftfi.com/?ref=KorzhTRAFF',
+  es: 'https://share.rwanftfi.com/?ref=KorzhTRAFF',
+  fr: 'https://share.rwanftfi.com/?ref=KorzhTRAFF',
+  pt: 'https://share.rwanftfi.com/?ref=KorzhTRAFF',
+  it: 'https://share.rwanftfi.com/?ref=PereudaDS',
+  fil: 'https://share.rwanftfi.com/?ref=PereudaDS',
+  tr: 'https://share.rwanftfi.com/?ref=PereudaDS',
+  vi: 'https://share.rwanftfi.com/?ref=PereudaDS',
 };
 
 // Map forum thread_id (branch) -> language code.
@@ -223,7 +223,7 @@ There's a free live webinar on making smarter financial decisions instead of cha
 Registration (required, separate from the platform): https://rwa100bonus.vercel.app/
 Zoom link: https://us02web.zoom.us/j/6359135949?pwd=gzMMgsXsVDk2Y8uGMlyynrl3yp9zd3.1
 Important conditions for the giveaway — always mention these when someone asks about the giveaway: registering alone is not enough, you must be present live on the Zoom call at the moment of the draw, and you must raise your hand during the call so the hosts see you're there. If a winner is not present or does not confirm, the prize is redrawn immediately among the rest.
-CRITICAL eligibility condition — always mention this too: only participants who are already registered on the RWA NFT FI platform can actually receive the prize, because the giveaway NFT is transferred cabinet-to-cabinet (platform account to platform account) — it cannot be sent to someone without a platform account. To register specifically for the giveaway, always use this exact link: https://app.rwanftfi.com/?ref=ProCripto — copy it and paste it into the browser of a DeFi wallet app (for example TokenPocket), then complete registration there. A regular mobile or desktop browser won't work for this, it has to be opened inside a DeFi wallet's built-in browser.
+CRITICAL eligibility condition — always mention this too: only participants who are already registered on the RWA NFT FI platform can actually receive the prize, because the giveaway NFT is transferred cabinet-to-cabinet (platform account to platform account) — it cannot be sent to someone without a platform account. To register specifically for the giveaway, always use this exact link: https://share.rwanftfi.com/?ref=ProCripto — copy it and paste it into the browser of a DeFi wallet app (for example TokenPocket), then complete registration there. A regular mobile or desktop browser won't work for this, it has to be opened inside a DeFi wallet's built-in browser.
 When someone is brand new, unsure where to start, hesitant, or asks "how do I begin" — proactively suggest starting from scratch with this webinar: it's free, teaches the fundamentals (diversification, project analysis, spotting scams) before they commit any money, and gives them a shot at the $1000 giveaway along the way. Frame it as a low-pressure first step, not a sales pitch.
 
 
@@ -245,6 +245,7 @@ WHEN SOMEONE ASKS ABOUT DOCUMENTS OR RESOURCES — give the direct link, never s
 - FinFlow: https://finflow-story.netlify.app/
 
 REGISTRATION: When a user wants to register or join — use ONLY the personal registration link provided at the end of this prompt. The official website https://rwanftfi.com is for general info only — registration always goes through the personal ref link.
+CRITICAL — referral link domain: all referral/registration links (any link containing "?ref=") must use the share.rwanftfi.com domain, e.g. https://share.rwanftfi.com/?ref=ProCripto. The old app.rwanftfi.com domain no longer works for registration — never output an app.rwanftfi.com link with a ?ref= parameter. Other platform links without ?ref= (whitepaper, resources, smart contracts, DAO governance, terms) are unaffected and still use app.rwanftfi.com as usual.
 
 HANDLING OBJECTIONS (from the project's own playbook — use naturally, don't recite verbatim):
 - "Is this a pyramid scheme?" → Point to the transparent smart contract, CertiK audit, and mathematically capped income per NFT — don't just say "it's not a pyramid," show why.
