@@ -318,6 +318,7 @@ async function triggerDirectWelcome(chatId, userObj, threadId) {
   welcomedUsers.add(userId);
 
   const name = userObj.first_name || "User";
+  const username = userObj.username || null;
 
   // language_code is not sent in chat_member events (lang=none confirmed via logs).
   // Try getChat — works if user has previously messaged the bot in private.
@@ -326,7 +327,7 @@ async function triggerDirectWelcome(chatId, userObj, threadId) {
     if (userInfo && userInfo.language_code) {
       const lang = normalizeLangCode(userInfo.language_code);
       console.log(`[WELCOME SEND IMMEDIATE] userId=${userId} name=${name} lang=${lang} via getChat`);
-      await sendWelcome(chatId, userId, name, lang, null);
+      await sendWelcome(chatId, userId, name, lang, null, username);
       return;
     }
   } catch (err) {
@@ -334,22 +335,38 @@ async function triggerDirectWelcome(chatId, userObj, threadId) {
   }
 
   // getChat didn't have language_code — wait for first message to detect language
-  pendingWelcome.set(userId, { chatId, name, joinedAt: Date.now() });
+  pendingWelcome.set(userId, { chatId, name, username, joinedAt: Date.now() });
   console.log(`[WELCOME PENDING] userId=${userId} name=${name} — waiting for first message`);
 
   // After 10 minutes of silence — send English as last resort
   setTimeout(() => {
     if (pendingWelcome.has(userId)) {
       pendingWelcome.delete(userId);
-      sendWelcome(chatId, userId, name, "en", null);
+      sendWelcome(chatId, userId, name, "en", null, username);
       console.log(`[WELCOME FALLBACK en] userId=${userId} — sent after 10min timeout`);
     }
   }, 10 * 60 * 1000);
 }
 
+// Escape HTML-sensitive characters so a user's name/username can't break the HTML parse_mode.
+function escapeHtml(str) {
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 // Send the actual welcome message + video once we know the user's language.
-async function sendWelcome(chatId, userId, name, lang, threadId) {
-  const rawText = (WELCOME_TEXTS[lang] || WELCOME_TEXTS.en).replace("{name}", name);
+// Builds a real Telegram mention so the new member gets a notification ping:
+// prefers @username (visible, familiar tag) when the user has a public username,
+// falls back to a tg://user?id= text-mention (works even without a username) otherwise.
+async function sendWelcome(chatId, userId, name, lang, threadId, username) {
+  const safeName = escapeHtml(name);
+  // IMPORTANT: a plain "@username" as literal text is what Telegram auto-detects as a
+  // mention entity and notifies the user about — wrapping it in an <a href="https://t.me/...">
+  // link instead makes it just a regular clickable link with NO notification. So when a
+  // username is available we deliberately do NOT use <a> for it.
+  const mention = username
+    ? `@${escapeHtml(username)}`
+    : `<a href="tg://user?id=${userId}">${safeName}</a>`;
+  const rawText = (WELCOME_TEXTS[lang] || WELCOME_TEXTS.en).replace("{name}", mention);
   const sendOptions = { parse_mode: "HTML" };
   if (threadId) sendOptions.message_thread_id = threadId;
 
@@ -411,7 +428,7 @@ bot.on("message", async (msg) => {
     pendingWelcome.delete(msg.from.id);
     const lang = detectLang(msg.text);
     console.log(`[WELCOME SEND] userId=${msg.from.id} name=${pending.name} lang=${lang} — first message detected`);
-    await sendWelcome(pending.chatId, msg.from.id, pending.name, lang, msg.message_thread_id || null);
+    await sendWelcome(pending.chatId, msg.from.id, pending.name, lang, msg.message_thread_id || null, pending.username);
   }
 
   bot.sendChatAction(msg.chat.id, "typing");
