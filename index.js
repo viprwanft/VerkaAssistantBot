@@ -113,6 +113,9 @@ const REG_KEYWORDS = [
   "finflow", "фин флоу", "финфлоу", "fin pro", "фин про", "compound", "компаунд", "earn cap",
   // Webinar & giveaway
   "розыгрыш", "вебинар", "webinar", "giveaway", "приз", "prize", "конкурс",
+  // Debit cards & card royalty program
+  "карта", "карту", "карты", "card", "debit", "дебетов", "visa", "виза", "kyc",
+  "royalty", "роялти", "rwanftcards",
   // Italian/Spanish/French/German/etc equivalents
   "documento", "libro blanco", "registrazione", "registrarse", "enregistrement",
   "dokument", "weissbuch", "registrierung"
@@ -227,6 +230,51 @@ CRITICAL eligibility condition — always mention this too: only participants wh
 When someone is brand new, unsure where to start, hesitant, or asks "how do I begin" — proactively suggest starting from scratch with this webinar: it's free, teaches the fundamentals (diversification, project analysis, spotting scams) before they commit any money, and gives them a shot at the $1000 giveaway along the way. Frame it as a low-pressure first step, not a sales pitch.
 
 
+RWA NFT DEBIT CARDS — new product, currently in waitlist/pre-sale phase:
+RWA NFT is launching worldwide premium Visa Business debit cards that let you spend your crypto like fiat — top up with USDT (BEP-20/TRC-20) or USDC (BEP-20), spend anywhere Visa is accepted. This is a separate product from the platform's NFT/DA ecosystem, run through its own site.
+Current status — always mention this when relevant: the waitlist is open now, but the pre-sale itself starts in September 2026. Cards aren't shipping yet — right now people are joining the waitlist and can complete KYC in advance.
+
+Card mechanics:
+- Crypto in your wallet, fiat on the card — top up with USDT/USDC, spend via Visa, contactless (Apple Pay, Google Pay, PayPal supported)
+- No IBAN — no automatic exchange of banking data between countries
+- Light-form KYC: no video verification, no proof of address required. Approval comes first, payment after.
+- Virtual card issued within about 5 minutes of approval
+- 200+ countries, 175,000,000+ Visa merchant locations
+- 30 independent BINs across banks and jurisdictions for broad coverage
+
+Four tiers — always give tier specifics when asked, don't just say "it depends":
+- Standard — $49 one-time, virtual only. Per-transaction limit up to $5,000, monthly limit up to $25,000. No ATM withdrawals. Top-up fee 2.8%. $0 maintenance for 3 years.
+- Premium (most popular / "clients' choice") — $199 one-time, virtual only. Per-transaction up to $50,000, monthly up to $1,000,000. No ATM withdrawals. Top-up fee 2%. $0 maintenance for 3 years.
+- Signature — $299 one-time, virtual + physical card. Per-transaction up to $75,000, monthly up to $1,500,000. ATM withdrawals up to $3,000/day. Top-up fee 2%. $0 maintenance for 3 years.
+- Black — $499 one-time, virtual + physical metal card. Per-transaction up to $100,000, monthly up to $3,000,000 (highest limit on the market, Black tier). ATM withdrawals up to $3,000/day. Top-up fee 2%. $0 maintenance for 3 years.
+- Users can upgrade to a higher tier at any time. Limits apply equally to the virtual and physical card of that tier.
+
+Security and privacy (mention factually when asked, don't oversell): funds sit in a segregated account separate from the bank's own capital (protected if the bank fails), the bank is a Visa partner, deposits are insured as an extra layer on top of segregation, and access is protected by password + 2FA or passkeys plus a separate financial password for transactions and 3DS confirmation on payments. No IBAN, no video verification, no proof of address — data stays confidential.
+
+How to join:
+1. Go to https://rwanftcards.com (waitlist / general info) or scan the QR code from the presentation
+2. Complete KYC verification at https://kyc.rwanftcards.com
+3. Check account status anytime at https://account.rwanftcards.com
+
+CRITICAL requirement — always mention this when someone asks about registering for the card: they must use the exact same email address they already use for their RWA NFT FI platform account. Using a different email will not work — the card account has to match the existing platform cabinet.
+
+RWA NFT CARDS ROYALTY PROGRAM — separate partner/referral program for the cards (distinct from the platform's own binary marketing system):
+Recommend RWA NFT cards and earn USDT rewards on every sale, paid instantly, no cap on earnings. It's a 10-rank career system — as personal sales and team volume grow, the earning percentage grows with it, from Starter at 12% up to Founder at 40%.
+Ranks and requirements (rank is granted only when both team volume AND team requirement are met):
+- Starter: 12% personal sale, no team requirement
+- Agent: 17%, needs $2,500 team volume
+- Manager: 21%, needs $7,500 team volume and either 2 Starters or 1 Agent on the team
+- Pro Manager: 24%, needs $25,000 team volume and either 2 Agents or 1 Manager; unlocks a 5% matching bonus on 1st-line partners
+- Director: 26%, needs $125,000 team volume and either 3 Managers or 1 Pro Manager; matching bonus 5%/4% on 1st/2nd line
+- Pro Director: 29%, needs $250,000 team volume and either 3 Pro Managers or 1 Director; matching bonus 5%/4%/3% on 1st/2nd/3rd line
+- Chief Director: 32%, needs $500,000 team volume and either 3 Directors or 1 Pro Director
+- Vice President: 34%, needs $1,000,000 team volume and either 3 Pro Directors or 1 Chief Director
+- President: 36%, needs $2,000,000 team volume and either 2 Chief Directors or 1 Vice President
+- Founder: 40%, needs $5,000,000 team volume and either 3 Vice Presidents or 2 Presidents
+How payouts work: a partner earns the difference between their own rank percentage and the percentage of whoever actually made the sale, and this distributes up the whole chain to the full 40% — so someone higher in rank earns more even on sales made deeper in their structure. On top of that, the matching bonus pays 5%/4%/3% of what a partner's 1st/2nd/3rd line partners earn (unlocked progressively at Pro Manager, Director, and Pro Director ranks).
+Team volume is the team's total sales in USDT — it accumulates for life and never resets, and career rank never expires once earned. Rewards are credited instantly in USDT; withdrawals are weekly, minimum $5.
+
+TRUST AND SECURITY:
 - CertiK audit, May 2026: 73 findings, 55 resolved, 1 critical finding fixed
 - UK Trademark: UK00004369823
 - DAO governance: 20 Guardians + multisig 2/3
@@ -305,7 +353,7 @@ async function processIncomingMessage(userId, chatId, userText) {
   const refLink = getRefLink(lang);
 
   if (isRegQuestion(text)) {
-    return await askClaude(userId, `The user asks about a document, registration, product info, or wants links. Reply in their language. Official website: https://rwanftfi.com — for registration use the personal link: ${refLink} — also share relevant links:\n- Whitepaper: https://whitepaper.rwanftfi.com\n- Resources: https://app.rwanftfi.com/resources\n- CertiK audit: https://skynet.certik.com/projects/rwanftfi\n- Smart Contracts: https://app.rwanftfi.com/smart-contracts\n- FinFlow: https://finflow-story.netlify.app/\n- Free webinar + $1000 giveaway registration: https://rwa100bonus.vercel.app/`, refLink);
+    return await askClaude(userId, `The user asks about a document, registration, product info, or wants links. Reply in their language. Official website: https://rwanftfi.com — for registration use the personal link: ${refLink} — also share relevant links:\n- Whitepaper: https://whitepaper.rwanftfi.com\n- Resources: https://app.rwanftfi.com/resources\n- CertiK audit: https://skynet.certik.com/projects/rwanftfi\n- Smart Contracts: https://app.rwanftfi.com/smart-contracts\n- FinFlow: https://finflow-story.netlify.app/\n- Free webinar + $1000 giveaway registration: https://rwa100bonus.vercel.app/\n- RWA NFT Debit Cards waitlist: https://rwanftcards.com\n- Card KYC verification: https://kyc.rwanftcards.com\n- Card account & status: https://account.rwanftcards.com`, refLink);
   }
   return await askClaude(userId, text, refLink);
 }
