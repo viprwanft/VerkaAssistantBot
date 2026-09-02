@@ -551,8 +551,19 @@ http.createServer((req, res) => {
           // (Previously this also required from.is_bot === true, which was too strict —
           // Group Help doesn't always attribute the change the same way, so real captcha
           // passes were being missed.)
-          const captchaPassed = oldStatus === "restricted" && newStatus !== "restricted" && newStatus !== "left" && newStatus !== "kicked";
+          const statusChangedFromRestricted = oldStatus === "restricted" && newStatus !== "restricted" && newStatus !== "left" && newStatus !== "kicked";
+          // Fallback: Telegram sometimes keeps status as "restricted" even after Group Help
+          // unlocks messaging — this happens when not every single permission flag matches
+          // the chat's default "fully unrestricted" set (e.g. can_pin_messages / can_manage_topics
+          // staying false, which regular members usually don't get anyway). In that case the
+          // status label never changes, but can_send_messages flips from false to true — that's
+          // the real signal the captcha was passed, so catch it too.
+          const unlockedWithinRestricted = oldStatus === "restricted" && newStatus === "restricted"
+            && oldMember && oldMember.can_send_messages === false
+            && newMember && newMember.can_send_messages === true;
+          const captchaPassed = statusChangedFromRestricted || unlockedWithinRestricted;
           if (captchaPassed && memberUser && !memberUser.is_bot) {
+            console.log(`[JOIN DEBUG captcha detected] userId=${memberUser.id} via=${statusChangedFromRestricted ? "status change" : "can_send_messages unlock"}`);
             await triggerDirectWelcome(chatId, memberUser, null);
           }
         }
