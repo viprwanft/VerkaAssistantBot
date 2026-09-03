@@ -354,6 +354,19 @@ function addToHistory(userId, role, content) {
   history.push({ role, content });
   if (history.length > MAX_HISTORY * 2) history.splice(0, history.length - MAX_HISTORY * 2);
 }
+// LLMs are prone to mistyping random-looking strings (referral codes, hashes, IDs) when
+// generating them token-by-token — they're not real words, so the model can drop or swap
+// characters. Rather than hope Claude types "EHVDSPRW" correctly every time, force any
+// rwanftcards.com link it produces back to the exact canonical URL after the fact.
+function fixCardLinks(text) {
+  if (!text) return text;
+  let fixed = text;
+  fixed = fixed.replace(/https?:\/\/kyc\.rwanftcards\.com[^\s<>"')]*/gi, "https://kyc.rwanftcards.com/?ref=EHVDSPRW");
+  fixed = fixed.replace(/https?:\/\/account\.rwanftcards\.com[^\s<>"')]*/gi, "https://account.rwanftcards.com/?ref=EHVDSPRW");
+  fixed = fixed.replace(/https?:\/\/(?:www\.)?rwanftcards\.com[^\s<>"')]*/gi, "https://rwanftcards.com/?ref=EHVDSPRW");
+  return fixed;
+}
+
 async function askClaude(userId, userMessage, refLink) {
   // Guard at the entry point too — an empty message should never reach the API.
   if (!userMessage || !String(userMessage).trim()) return null;
@@ -366,8 +379,9 @@ async function askClaude(userId, userMessage, refLink) {
       messages: getHistory(userId),
     });
     const textBlock = response.content && response.content.find(block => block.type === "text");
-    const reply = textBlock && textBlock.text ? textBlock.text : null;
+    let reply = textBlock && textBlock.text ? textBlock.text : null;
     if (!reply) throw new Error("Empty response content from Claude");
+    reply = fixCardLinks(reply);
     addToHistory(userId, "assistant", reply);
     return reply;
   } catch (err) {
