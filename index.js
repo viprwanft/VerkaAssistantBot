@@ -101,25 +101,67 @@ function normalizeLangCode(languageCode) {
   return WELCOME_TEXTS[code] ? code : "en";
 }
 
-const REG_KEYWORDS = [
-  // Registration
-  "регистрация", "зарегистрироваться", "как начать", "ссылка", "инструкция", "вайтлист",
-  "register", "registration", "sign up", "signup", "join", "get started", "link",
-  // Documents & security
+// Topic-specific keyword buckets — each maps a question to its OWN set of links/instructions,
+// so a question about cards doesn't drag in FinFlow/webinar links and vice versa.
+const CARD_KEYWORDS = [
+  "карта", "карту", "карты", "карт", "card", "debit", "дебетов", "visa", "виза", "kyc",
+  "royalty", "роялти", "rwanftcards", "тариф", "tier", "standard", "premium", "signature", "black card",
+];
+const FINFLOW_KEYWORDS = [
+  "finflow", "фин флоу", "финфлоу", "fin pro", "фин про", "compound", "компаунд", "earn cap",
+];
+const WEBINAR_KEYWORDS = [
+  "розыгрыш", "вебинар", "webinar", "giveaway", "приз", "prize", "конкурс",
+];
+const MARKETING_KEYWORDS = [
+  "маркетинг", "marketing plan", "маркетинг план", "бинар", "binary", "матчинг", "matching bonus",
+  "компрессия", "compression", "карьерные призы", "career prize", "рефералы", "referral program",
+  "структура сети", "22 уровня", "8 миллионов позиций",
+];
+const DOCS_KEYWORDS = [
   "whitepaper", "белый лист", "вайтпейпер", "документ", "certik", "сертик", "аудит", "audit",
   "смарт контракт", "smart contract", "токеномика", "tokenomics", "dao", "governance",
   "trademark", "товарный знак", "brandbook", "брендбук",
-  // FinFlow product
-  "finflow", "фин флоу", "финфлоу", "fin pro", "фин про", "compound", "компаунд", "earn cap",
-  // Webinar & giveaway
-  "розыгрыш", "вебинар", "webinar", "giveaway", "приз", "prize", "конкурс",
-  // Debit cards & card royalty program
-  "карта", "карту", "карты", "card", "debit", "дебетов", "visa", "виза", "kyc",
-  "royalty", "роялти", "rwanftcards",
-  // Italian/Spanish/French/German/etc equivalents
-  "documento", "libro blanco", "registrazione", "registrarse", "enregistrement",
-  "dokument", "weissbuch", "registrierung"
 ];
+const REGISTRATION_KEYWORDS = [
+  "регистрация", "зарегистрироваться", "как начать", "вайтлист", "register", "registration",
+  "sign up", "signup", "join", "get started",
+  "documento", "libro blanco", "registrazione", "registrarse", "enregistrement",
+  "dokument", "weissbuch", "registrierung",
+];
+
+// Returns the single best-matching topic for a message, checked in priority order
+// (most specific product topics first, general registration/docs last).
+function detectTopic(text) {
+  const t = text.toLowerCase();
+  if (CARD_KEYWORDS.some(kw => t.includes(kw))) return "cards";
+  if (FINFLOW_KEYWORDS.some(kw => t.includes(kw))) return "finflow";
+  if (WEBINAR_KEYWORDS.some(kw => t.includes(kw))) return "webinar";
+  if (MARKETING_KEYWORDS.some(kw => t.includes(kw))) return "marketing";
+  if (DOCS_KEYWORDS.some(kw => t.includes(kw))) return "docs";
+  if (REGISTRATION_KEYWORDS.some(kw => t.includes(kw))) return "registration";
+  return null;
+}
+
+// Instruction + links for each topic — deliberately narrow, so Claude only mentions what's relevant.
+function buildTopicPrompt(topic, text, refLink) {
+  switch (topic) {
+    case "cards":
+      return `The user is asking specifically about the RWA NFT debit cards (and/or the card Royalty Program). Reply in their language, using only what you know about the CARDS product from your instructions — tiers, limits, KYC, security, or the Royalty Program ranks, whichever fits the question. Do NOT mention FinFlow, the webinar/giveaway, or the platform's own binary marketing system unless the user specifically asks about them. Relevant links only:\n- Card waitlist: https://rwanftcards.com/?ref=EHVDSPRW\n- Card KYC verification: https://kyc.rwanftcards.com/?ref=EHVDSPRW\n- Card account & status: https://account.rwanftcards.com/?ref=EHVDSPRW\nRemember: card registration must use the same email as their RWA NFT FI platform account.\n\nUser's question: ${text}`;
+    case "finflow":
+      return `The user is asking specifically about FinFlow. Reply in their language, using only what you know about FinFlow — the market-neutral trading NFT product. Do NOT bring up debit cards, the webinar/giveaway, or unrelated platform info unless asked. Relevant link only:\n- FinFlow: https://finflow-story.netlify.app/\n\nUser's question: ${text}`;
+    case "webinar":
+      return `The user is asking specifically about the free webinar and/or the $1000 giveaway. Reply in their language, covering only that — what it's about, and the giveaway conditions (must register, must be live on the Zoom call, must raise hand at draw time). Do NOT bring up FinFlow, debit cards, or unrelated platform info unless asked. Relevant links only:\n- Webinar registration: https://rwa100bonus.vercel.app/\n- Zoom: https://us02web.zoom.us/j/6359135949?pwd=gzMMgsXsVDk2Y8uGMlyynrl3yp9zd3.1\n\nUser's question: ${text}`;
+    case "marketing":
+      return `The user is asking specifically about the platform's marketing/compensation plan (binary structure, matching bonus, compression, career prizes). Reply in their language, using only that part of your instructions. Do NOT bring up FinFlow, debit cards, or the webinar unless asked. No extra links needed unless they ask to register — if so, personal link: ${refLink}\n\nUser's question: ${text}`;
+    case "docs":
+      return `The user is asking about official documents or platform resources. Reply in their language and share only the specific link(s) relevant to what they asked — don't dump the entire list if they asked about one specific thing.\n- Whitepaper: https://whitepaper.rwanftfi.com\n- Resources: https://app.rwanftfi.com/resources\n- CertiK audit: https://skynet.certik.com/projects/rwanftfi\n- Smart Contracts: https://app.rwanftfi.com/smart-contracts\n- DAO Governance: https://app.rwanftfi.com/dao-governance\n- Terms: https://app.rwanftfi.com/terms\n- Brandbook: https://brandbook.rwanftfi.com\n\nUser's question: ${text}`;
+    case "registration":
+      return `The user wants to register or join the platform. Reply in their language. Official website (info only): https://rwanftfi.com — for actual registration use the personal link: ${refLink}\n\nUser's question: ${text}`;
+    default:
+      return text;
+  }
+}
 
 // Store detected language per user so ref link stays consistent across conversation
 const userLangs = new Map();
@@ -139,12 +181,11 @@ function detectLang(text) {
   if (/\b(ang|ng|mga|sa|na|at)\b/.test(t)) return "fil";
   return "en";
 }
-function isRegQuestion(text) {
-  const t = text.toLowerCase();
-  return REG_KEYWORDS.some(kw => t.includes(kw));
-}
 
 const SYSTEM_PROMPT = `You are Vera — a warm, knowledgeable AI assistant of the RWA NFT FI ecosystem. You know this project inside out and speak like a passionate, experienced community member, not a sales bot.
+
+STAY STRICTLY ON-TOPIC — this is critical:
+Answer exactly what the user asked, nothing more. The project has several distinct products/topics (the core NFT/DA platform, the binary marketing plan, FinFlow, the debit cards + card Royalty Program, the free webinar/giveaway). If someone asks specifically about one of them, talk ONLY about that one — don't append information or links about the other products just because they exist in your knowledge. For example: a question about debit cards gets an answer about debit cards and only the card-related links, not FinFlow or webinar links tacked on. A question about the marketing plan gets an answer about the marketing plan, not a dump of every registration link you know. Never pad an answer with "by the way, we also have X and Y" unless the user asked something broad enough to warrant it (e.g. "what does the platform offer overall?").
 
 CRITICAL FORMATTING RULES — READ CAREFULLY:
 You are writing directly into a Telegram chat, not a markdown document. Telegram does NOT render markdown — if you write **text** or ## Heading, the user sees the literal symbols ** and ## on their screen, which looks broken and unprofessional.
@@ -252,11 +293,12 @@ Four tiers — always give tier specifics when asked, don't just say "it depends
 Security and privacy (mention factually when asked, don't oversell): funds sit in a segregated account separate from the bank's own capital (protected if the bank fails), the bank is a Visa partner, deposits are insured as an extra layer on top of segregation, and access is protected by password + 2FA or passkeys plus a separate financial password for transactions and 3DS confirmation on payments. No IBAN, no video verification, no proof of address — data stays confidential.
 
 How to join:
-1. Go to https://rwanftcards.com (waitlist / general info) or scan the QR code from the presentation
-2. Complete KYC verification at https://kyc.rwanftcards.com
-3. Check account status anytime at https://account.rwanftcards.com
+1. Go to https://rwanftcards.com/?ref=EHVDSPRW (waitlist / general info) or scan the QR code from the presentation
+2. Complete KYC verification at https://kyc.rwanftcards.com/?ref=EHVDSPRW
+3. Check account status anytime at https://account.rwanftcards.com/?ref=EHVDSPRW
 
 CRITICAL requirement — always mention this when someone asks about registering for the card: they must use the exact same email address they already use for their RWA NFT FI platform account. Using a different email will not work — the card account has to match the existing platform cabinet.
+IMPORTANT: always use the full ref parameter on every card-related link — ?ref=EHVDSPRW — for the waitlist (https://rwanftcards.com/?ref=EHVDSPRW), KYC (https://kyc.rwanftcards.com/?ref=EHVDSPRW), and account (https://account.rwanftcards.com/?ref=EHVDSPRW). Never output any of these bare, without the ref parameter.
 
 RWA NFT CARDS ROYALTY PROGRAM — separate partner/referral program for the cards (distinct from the platform's own binary marketing system):
 Recommend RWA NFT cards and earn USDT rewards on every sale, paid instantly, no cap on earnings. It's a 10-rank career system — as personal sales and team volume grow, the earning percentage grows with it, from Starter at 12% up to Founder at 40%.
@@ -352,10 +394,9 @@ async function processIncomingMessage(userId, chatId, userText) {
   const lang = userLangs.get(userId) || detectedLang;
   const refLink = getRefLink(lang);
 
-  if (isRegQuestion(text)) {
-    return await askClaude(userId, `The user asks about a document, registration, product info, or wants links. Reply in their language. Official website: https://rwanftfi.com — for registration use the personal link: ${refLink} — also share relevant links:\n- Whitepaper: https://whitepaper.rwanftfi.com\n- Resources: https://app.rwanftfi.com/resources\n- CertiK audit: https://skynet.certik.com/projects/rwanftfi\n- Smart Contracts: https://app.rwanftfi.com/smart-contracts\n- FinFlow: https://finflow-story.netlify.app/\n- Free webinar + $1000 giveaway registration: https://rwa100bonus.vercel.app/\n- RWA NFT Debit Cards waitlist: https://rwanftcards.com\n- Card KYC verification: https://kyc.rwanftcards.com\n- Card account & status: https://account.rwanftcards.com`, refLink);
-  }
-  return await askClaude(userId, text, refLink);
+  const topic = detectTopic(text);
+  const messageToSend = buildTopicPrompt(topic, text, refLink);
+  return await askClaude(userId, messageToSend, refLink);
 }
 
 // userObj = the Telegram user who joined. threadId = forum branch they joined in (if any).
