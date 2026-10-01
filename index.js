@@ -109,9 +109,14 @@ const CARD_KEYWORDS = [
 ];
 const FINFLOW_KEYWORDS = [
   "finflow", "фин флоу", "финфлоу", "fin pro", "фин про", "compound", "компаунд", "earn cap",
+  "калькулятор финфлоу", "finflow calculator", "калькулятор fin",
 ];
 const WEBINAR_KEYWORDS = [
   "розыгрыш", "вебинар", "webinar", "giveaway", "приз", "prize", "конкурс",
+];
+const PRESENTATION_KEYWORDS = [
+  "презентация", "презентацию", "презентации", "presentation", "деck", "общая презентация",
+  "слайды", "slides", "overview", "обзор проекта",
 ];
 const MARKETING_KEYWORDS = [
   "маркетинг", "marketing plan", "маркетинг план", "бинар", "binary", "матчинг", "matching bonus",
@@ -137,6 +142,7 @@ function detectTopic(text) {
   if (CARD_KEYWORDS.some(kw => t.includes(kw))) return "cards";
   if (FINFLOW_KEYWORDS.some(kw => t.includes(kw))) return "finflow";
   if (WEBINAR_KEYWORDS.some(kw => t.includes(kw))) return "webinar";
+  if (PRESENTATION_KEYWORDS.some(kw => t.includes(kw))) return "presentation";
   if (MARKETING_KEYWORDS.some(kw => t.includes(kw))) return "marketing";
   if (DOCS_KEYWORDS.some(kw => t.includes(kw))) return "docs";
   if (REGISTRATION_KEYWORDS.some(kw => t.includes(kw))) return "registration";
@@ -149,13 +155,15 @@ function buildTopicPrompt(topic, text, refLink) {
     case "cards":
       return `The user is asking specifically about the RWA NFT debit cards (and/or the card Royalty Program). Reply in their language, using only what you know about the CARDS product from your instructions — tiers, limits, KYC, security, or the Royalty Program ranks, whichever fits the question. Do NOT mention FinFlow, the webinar/giveaway, or the platform's own binary marketing system unless the user specifically asks about them. Relevant links only:\n- Card waitlist: https://rwanftcards.com/?ref=EHVDSPRW\n- Card KYC verification: https://kyc.rwanftcards.com/?ref=EHVDSPRW\n- Card account & status: https://account.rwanftcards.com/?ref=EHVDSPRW\nRemember: card registration must use the same email as their RWA NFT FI platform account.\n\nUser's question: ${text}`;
     case "finflow":
-      return `The user is asking specifically about FinFlow. Reply in their language, using only what you know about FinFlow — the market-neutral trading NFT product. Do NOT bring up debit cards, the webinar/giveaway, or unrelated platform info unless asked. Relevant link only:\n- FinFlow: https://finflow-story.netlify.app/\n\nUser's question: ${text}`;
+      return `The user is asking specifically about FinFlow. Reply in their language, using only what you know about FinFlow — the market-neutral trading NFT product. Do NOT bring up debit cards, the webinar/giveaway, or unrelated platform info unless asked. Relevant links only:\n- FinFlow: https://finflow-story.netlify.app/\n- FinFlow calculator (estimate potential rewards): https://finflow-calculator-lite.netlify.app/\n\nUser's question: ${text}`;
     case "webinar":
-      return `The user is asking specifically about the free webinar and/or the $1000 giveaway. Reply in their language, covering only that — what it's about, and the giveaway conditions (must register, must be live on the Zoom call, must raise hand at draw time). Do NOT bring up FinFlow, debit cards, or unrelated platform info unless asked. Relevant links only:\n- Webinar registration: https://rwa100bonus.vercel.app/\n- Zoom: https://us02web.zoom.us/j/6359135949?pwd=gzMMgsXsVDk2Y8uGMlyynrl3yp9zd3.1\n\nUser's question: ${text}`;
+      return `The user is asking specifically about the free webinar and/or the $1000 giveaway. Reply in their language, covering only that — what it's about, and the giveaway conditions (must register, must be live on the Zoom call, must raise hand at draw time). Do NOT bring up FinFlow, debit cards, or unrelated platform info unless asked. Relevant links only:\n- Webinar registration: https://rwa100bonus.run.place/\n- Zoom: https://us02web.zoom.us/j/6359135949?pwd=gzMMgsXsVDk2Y8uGMlyynrl3yp9zd3.1\n\nUser's question: ${text}`;
     case "marketing":
       return `The user is asking specifically about the platform's marketing/compensation plan (binary structure, matching bonus, compression, career prizes). Reply in their language, using only that part of your instructions. Do NOT bring up FinFlow, debit cards, or the webinar unless asked. No extra links needed unless they ask to register — if so, personal link: ${refLink}\n\nUser's question: ${text}`;
     case "docs":
       return `The user is asking about official documents or platform resources. Reply in their language and share only the specific link(s) relevant to what they asked — don't dump the entire list if they asked about one specific thing.\n- Whitepaper: https://whitepaper.rwanftfi.com\n- Resources: https://app.rwanftfi.com/resources\n- CertiK audit: https://skynet.certik.com/projects/rwanftfi\n- Smart Contracts: https://app.rwanftfi.com/smart-contracts\n- DAO Governance: https://app.rwanftfi.com/dao-governance\n- Terms: https://app.rwanftfi.com/terms\n- Brandbook: https://brandbook.rwanftfi.com\n\nUser's question: ${text}`;
+    case "presentation":
+      return `The user is asking for the platform's general presentation/overview. Reply in their language and share this link:\n- Platform presentation: https://presentation-rwanft.netlify.app/\nDo NOT bring up FinFlow, debit cards, or the webinar unless asked.\n\nUser's question: ${text}`;
     case "registration":
       return `The user wants to register or join the platform. Reply in their language. Official website (info only): https://rwanftfi.com — for actual registration use the personal link: ${refLink}\n\nUser's question: ${text}`;
     default:
@@ -261,10 +269,11 @@ IMPORTANT — always frame these as targets, never guarantees:
 - These are target and simulated metrics based on backtesting and modeling — always say so, never state them as promised or fixed returns
 
 Details and full breakdown: https://finflow-story.netlify.app/
+FinFlow calculator (lets users estimate potential rewards before buying): https://finflow-calculator-lite.netlify.app/
 
 FREE WEBINAR AND GIVEAWAY — recommend this as a great starting point for newcomers:
 There's a free live webinar on making smarter financial decisions instead of chasing loud promises — it covers diversification, how to analyze projects, why not to put everything into one instrument, and how to spot questionable offers and reduce risk. A $1000 total prize pool is raffled live among attendees during the call.
-Registration (required, separate from the platform): https://rwa100bonus.vercel.app/
+Registration (required, separate from the platform): https://rwa100bonus.run.place/
 Zoom link: https://us02web.zoom.us/j/6359135949?pwd=gzMMgsXsVDk2Y8uGMlyynrl3yp9zd3.1
 Important conditions for the giveaway — always mention these when someone asks about the giveaway: registering alone is not enough, you must be present live on the Zoom call at the moment of the draw, and you must raise your hand during the call so the hosts see you're there. If a winner is not present or does not confirm, the prize is redrawn immediately among the rest.
 CRITICAL eligibility condition — always mention this too: only participants who are already registered on the RWA NFT FI platform can actually receive the prize, because the giveaway NFT is transferred cabinet-to-cabinet (platform account to platform account) — it cannot be sent to someone without a platform account. To register specifically for the giveaway, always use this exact link: https://share.rwanftfi.com/?ref=ProCripto — copy it and paste it into the browser of a DeFi wallet app (for example TokenPocket), then complete registration there. A regular mobile or desktop browser won't work for this, it has to be opened inside a DeFi wallet's built-in browser.
@@ -325,6 +334,7 @@ TRUST AND SECURITY:
 WHEN SOMEONE ASKS ABOUT DOCUMENTS OR RESOURCES — give the direct link, never say to search for it themselves:
 - Whitepaper: https://whitepaper.rwanftfi.com
 - Presentation/Deck: https://deck.rwanftfi.com
+- General platform presentation (alternate version): https://presentation-rwanft.netlify.app/
 - Brandbook: https://brandbook.rwanftfi.com
 - Resources hub: https://app.rwanftfi.com/resources
 - Smart Contracts: https://app.rwanftfi.com/smart-contracts
@@ -364,6 +374,9 @@ function fixCardLinks(text) {
   fixed = fixed.replace(/https?:\/\/kyc\.rwanftcards\.com[^\s<>"')]*/gi, "https://kyc.rwanftcards.com/?ref=EHVDSPRW");
   fixed = fixed.replace(/https?:\/\/account\.rwanftcards\.com[^\s<>"')]*/gi, "https://account.rwanftcards.com/?ref=EHVDSPRW");
   fixed = fixed.replace(/https?:\/\/(?:www\.)?rwanftcards\.com[^\s<>"')]*/gi, "https://rwanftcards.com/?ref=EHVDSPRW");
+  // Old webinar domain is dead — the project moved to rwa100bonus.run.place. Catch any
+  // stale rwa100bonus.vercel.app the model might still produce (e.g. from older chat history).
+  fixed = fixed.replace(/https?:\/\/rwa100bonus\.vercel\.app[^\s<>"')]*/gi, "https://rwa100bonus.run.place/");
   return fixed;
 }
 
