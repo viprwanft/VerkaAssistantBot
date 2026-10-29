@@ -90,6 +90,10 @@ const WELCOME_TEXTS = {
 
 function getRefLink(lang) { return REF_LINKS[lang] || REF_LINKS['en']; }
 
+// Dedicated Claim Spot / FinPro Marketing registration link — separate from the main
+// platform's share.rwanftfi.com registration link above.
+const FINPRO_REGISTRATION_LINK = "https://rwafinpro.com/finpro?ref=ProCripto";
+
 function getLangByThread(threadId) {
   return THREAD_LANG[threadId] || null;
 }
@@ -123,6 +127,16 @@ const MARKETING_KEYWORDS = [
   "компрессия", "compression", "карьерные призы", "career prize", "рефералы", "referral program",
   "структура сети", "22 уровня", "8 миллионов позиций",
 ];
+// FinPro Marketing (Claim Spot / FinCore pre-launch program) — a SEPARATE referral/compensation
+// system from the base platform's binary marketing above. Checked before the generic MARKETING
+// and FINFLOW buckets so it isn't swallowed by the bare word "маркетинг" or "fin pro".
+const FINPRO_MARKETING_KEYWORDS = [
+  "claim spot", "клейм спот", "клейм-спот", "клайм спот", "застолбить место", "займи место сейчас",
+  "finpro marketing", "маркетинг finpro", "маркетинг финпро", "финпро маркетинг", "join finpro",
+  "fincore", "финкор", "финкоре", "запуск fincore",
+  "20 уровней", "уровни finpro", "уровневый маркетинг finpro", "earn cap finpro", "income limit finpro",
+  "direct sale", "директ сейл", "реферальный код finpro", "место в finpro",
+];
 const DOCS_KEYWORDS = [
   "whitepaper", "белый лист", "вайтпейпер", "документ", "certik", "сертик", "аудит", "audit",
   "смарт контракт", "smart contract", "токеномика", "tokenomics", "dao", "governance",
@@ -140,6 +154,7 @@ const REGISTRATION_KEYWORDS = [
 function detectTopic(text) {
   const t = text.toLowerCase();
   if (CARD_KEYWORDS.some(kw => t.includes(kw))) return "cards";
+  if (FINPRO_MARKETING_KEYWORDS.some(kw => t.includes(kw))) return "finpro_marketing";
   if (FINFLOW_KEYWORDS.some(kw => t.includes(kw))) return "finflow";
   if (WEBINAR_KEYWORDS.some(kw => t.includes(kw))) return "webinar";
   if (PRESENTATION_KEYWORDS.some(kw => t.includes(kw))) return "presentation";
@@ -159,7 +174,9 @@ function buildTopicPrompt(topic, text, refLink) {
     case "webinar":
       return `The user is asking specifically about the free webinar and/or the $1000 giveaway. Reply in their language, covering only that — what it's about, and the giveaway conditions (must register, must be live on the Zoom call, must raise hand at draw time). Do NOT bring up FinFlow, debit cards, or unrelated platform info unless asked. Relevant links only:\n- Webinar registration: https://rwa100bonus.run.place/\n- Zoom: https://us02web.zoom.us/j/6359135949?pwd=gzMMgsXsVDk2Y8uGMlyynrl3yp9zd3.1\n\nUser's question: ${text}`;
     case "marketing":
-      return `The user is asking specifically about the platform's marketing/compensation plan (binary structure, matching bonus, compression, career prizes). Reply in their language, using only that part of your instructions. Do NOT bring up FinFlow, debit cards, or the webinar unless asked. No extra links needed unless they ask to register — if so, personal link: ${refLink}\n\nUser's question: ${text}`;
+      return `The user is asking specifically about the platform's BASE marketing/compensation plan (binary structure, matching bonus, compression, career prizes). This is NOT the same thing as "FinPro Marketing" / Claim Spot / FinCore — if the user actually means that, answer about FinPro Marketing instead. Reply in their language, using only that part of your instructions. Do NOT bring up FinFlow, debit cards, or the webinar unless asked. No extra links needed unless they ask to register — if so, personal link: ${refLink}\n\nUser's question: ${text}`;
+    case "finpro_marketing":
+      return `The user is asking specifically about FinPro Marketing — the Claim Spot / pre-launch referral program tied to FinCore and other FinPro products. This is a SEPARATE system from the base platform's binary marketing plan — do not mix the two or mention the binary/22-level system unless the user asks about it directly. Reply in their language, using only your FINPRO MARKETING instructions (Claim Spot requirements, the 20-level structure, Direct Sale %, Income Limit vs Earn Cap, auto-compound). Do NOT bring up debit cards or the webinar unless asked, and only mention FinFlow mechanics beyond the $500 entry requirement if the user specifically asks about FinFlow itself.\nTo claim a spot: go to ${FINPRO_REGISTRATION_LINK} and follow Claim Spot there (connect your wallet with your NFT, open/confirm your FinFlow position, then claim). That exact link is also their own personal link to invite others once they have a spot.\n\nUser's question: ${text}`;
     case "docs":
       return `The user is asking about official documents or platform resources. Reply in their language and share only the specific link(s) relevant to what they asked — don't dump the entire list if they asked about one specific thing.\n- Whitepaper: https://whitepaper.rwanftfi.com\n- Resources: https://app.rwanftfi.com/resources\n- CertiK audit: https://skynet.certik.com/projects/rwanftfi\n- Smart Contracts: https://app.rwanftfi.com/smart-contracts\n- DAO Governance: https://app.rwanftfi.com/dao-governance\n- Terms: https://app.rwanftfi.com/terms\n- Brandbook: https://brandbook.rwanftfi.com\n\nUser's question: ${text}`;
     case "presentation":
@@ -193,7 +210,7 @@ function detectLang(text) {
 const SYSTEM_PROMPT = `You are Vera — a warm, knowledgeable AI assistant of the RWA NFT FI ecosystem. You know this project inside out and speak like a passionate, experienced community member, not a sales bot.
 
 STAY STRICTLY ON-TOPIC — this is critical:
-Answer exactly what the user asked, nothing more. The project has several distinct products/topics (the core NFT/DA platform, the binary marketing plan, FinFlow, the debit cards + card Royalty Program, the free webinar/giveaway). If someone asks specifically about one of them, talk ONLY about that one — don't append information or links about the other products just because they exist in your knowledge. For example: a question about debit cards gets an answer about debit cards and only the card-related links, not FinFlow or webinar links tacked on. A question about the marketing plan gets an answer about the marketing plan, not a dump of every registration link you know. Never pad an answer with "by the way, we also have X and Y" unless the user asked something broad enough to warrant it (e.g. "what does the platform offer overall?").
+Answer exactly what the user asked, nothing more. The project has several distinct products/topics (the core NFT/DA platform, the base binary marketing plan, FinPro Marketing / Claim Spot / FinCore, FinFlow, the debit cards + card Royalty Program, the free webinar/giveaway). If someone asks specifically about one of them, talk ONLY about that one — don't append information or links about the other products just because they exist in your knowledge. For example: a question about debit cards gets an answer about debit cards and only the card-related links, not FinFlow or webinar links tacked on. A question about the marketing plan gets an answer about the marketing plan, not a dump of every registration link you know. Never pad an answer with "by the way, we also have X and Y" unless the user asked something broad enough to warrant it (e.g. "what does the platform offer overall?").
 
 CRITICAL FORMATTING RULES — READ CAREFULLY:
 You are writing directly into a Telegram chat, not a markdown document. Telegram does NOT render markdown — if you write **text** or ## Heading, the user sees the literal symbols ** and ## on their screen, which looks broken and unprofessional.
@@ -247,6 +264,36 @@ MARKETING SYSTEM:
 - Compression: when a participant's NFT limit hits zero, rewards flow up to the nearest active participant above them
 - 99% of funds are distributed back to the network via smart contract
 - Career prizes on top of regular income: Apple tech, Rolex watches, travel funds, apartment, car
+
+FINPRO MARKETING (Claim Spot / FinCore pre-launch program) — a SEPARATE referral/compensation system from the binary marketing plan above. Never mix the two: this one is unilevel (not binary), 20 levels, and lives specifically under the Fin Pro tab, covering FinCore and future FinPro products.
+
+What it is: a way to reserve your spot and referral link in the FinPro Marketing structure now, before FinCore itself launches, so that everyone you invite before launch already counts toward your team and starts generating marketing income for you from day one of FinCore going live.
+
+Claim Spot requirements — need BOTH of these:
+1. A main RWA NFT from RWANFTFI in your wallet
+2. One of two financial conditions, whichever applies: an open FinFlow position of at least 500 USDT, OR — if you've already earned more than 5,000 USDT in total platform income — 10% of your total earned income (so the system takes the higher of the two numbers as your required entry amount)
+
+How to claim, 3 steps: connect the wallet holding your NFT → open a FinFlow position (minimum $500) → click Claim Spot using the referral link or code of the person who invited you.
+
+Structure — 20 levels deep, unilevel (each level can hold many more members than the one above it, not a fixed 2-branch binary):
+- Direct Sale: 5% of the passive income earned by every person you personally invited, on any level they sit on
+- Level override, from the passive income of everyone in your structure on levels 2–20: level 1 = 0%, level 2 = 1%, levels 3–15 mostly 2–3%, levels 16–17 = 2%, level 18 = 1%, levels 19–20 = 0.5%. Combined theoretical maximum across all 20 fully-open, fully-populated levels is 43%.
+- Levels only pay out once "opened" for you — a level opens based on the total value of your own assets across all FinPro products (FinFlow included); this is checked daily, so growing your own position unlocks more levels and more income over time, not just inviting more people.
+- One structure feeds every FinPro product: if someone you invited is active in FinCore and other future FinPro products, you earn marketing from each of those products they participate in — not just one.
+
+Two separate limits — every marketing payout consumes both at once:
+- Income Limit: belongs to your main RWA NFT and is shared between regular RWA rewards and FinPro marketing rewards; once it hits zero, marketing pauses until you renew or upgrade your NFT
+- Earn Cap: the ceiling on your specific FinPro product position (e.g. your FinFlow position), filled jointly by that position's own passive yield plus any marketing income; once full, that position is complete
+- If either limit has less room left than an accrual would need, you still get paid — just capped to whatever room remains
+
+Auto-compound: an optional toggle that reinvests 100% of new marketing income straight back into your position instead of letting it sit on your balance. This grows the position itself, which can then earn both more product yield and more marketing at once. If asked for a sense of scale, you can give this as a clearly hypothetical illustration, never a promise: with a flat $100/day in marketing collected but not reinvested, the balance after 12 months is simply $36,000; with auto-compound on and an assumed 15%/month product yield, reinvesting the same $100/day can grow to roughly $68,000+ over the same period, because every reinvested dollar starts earning both product yield and new marketing immediately. Always frame numbers like these as an illustrative example with stated assumptions, never as an expected or guaranteed outcome.
+
+Five rules to mention when relevant:
+1. Your spot is permanent — it stays yours even if you close every open position
+2. Entry is invite-only, via someone else's FinPro referral link or code
+3. You have 365 days to claim/withdraw any reward that has accrued
+4. Changing the wallet tied to your spot requires going through DAO governance
+5. Once your first marketing accrual happens, any increased Income Limit from an NFT upgrade applies permanently to all your open positions
 
 FINFLOW — new product, market-neutral trading strategy:
 FinFlow is a separate NFT product inside the platform (Fin Pro tab) built around a market-neutral algorithmic trading strategy — it does not predict market direction, it profits from structural returns (funding rate collection every 8 hours at zero delta) plus a multi-strategy alpha layer (mean reversion, statistical arbitrage, short-term momentum).
@@ -398,7 +445,16 @@ async function askClaude(userId, userMessage, refLink) {
     addToHistory(userId, "assistant", reply);
     return reply;
   } catch (err) {
-    console.error(`askClaude failed: ${err.message}`);
+    // "credit balance is too low" / "invalid_request_error" billing errors are permanent for
+    // this request — retrying immediately won't help, it'll just fail the same way again and
+    // waste time. Tag it clearly in logs so it's instantly recognizable, not confused with a
+    // transient network blip.
+    const isBillingError = /credit balance is too low/i.test(err.message);
+    if (isBillingError) {
+      console.error(`askClaude BILLING ERROR (Anthropic account out of credits — top up at console.anthropic.com/settings/billing): ${err.message}`);
+    } else {
+      console.error(`askClaude failed: ${err.message}`);
+    }
     // Remove the failed user message from history to avoid corrupted state
     const history = getHistory(userId);
     if (history.length > 0 && history[history.length - 1].role === "user") history.pop();
@@ -549,18 +605,27 @@ bot.on("message", async (msg) => {
 
   bot.sendChatAction(msg.chat.id, "typing");
 
-  // SDK already retries internally (maxRetries: 2). Just one outer retry as a safety net.
+  // SDK already retries internally (maxRetries: 2). Just one outer retry as a safety net —
+  // but only for errors that might actually be transient. A billing/credit error is
+  // permanent until someone tops up the account, so retrying it immediately is pointless.
   let reply = null;
+  let lastError = null;
   try {
     reply = await processIncomingMessage(msg.from.id, msg.chat.id, msg.text.trim());
   } catch (err) {
+    lastError = err;
+    const isBillingError = /credit balance is too low/i.test(err.message);
     console.error(`Message handler attempt 1 failed: ${err.message}`);
-    try {
-      await new Promise(r => setTimeout(r, 3000));
-      bot.sendChatAction(msg.chat.id, "typing").catch(() => {});
-      reply = await processIncomingMessage(msg.from.id, msg.chat.id, msg.text.trim());
-    } catch (err2) {
-      console.error(`Message handler attempt 2 failed: ${err2.message}`);
+    if (!isBillingError) {
+      try {
+        await new Promise(r => setTimeout(r, 3000));
+        bot.sendChatAction(msg.chat.id, "typing").catch(() => {});
+        reply = await processIncomingMessage(msg.from.id, msg.chat.id, msg.text.trim());
+        lastError = null;
+      } catch (err2) {
+        lastError = err2;
+        console.error(`Message handler attempt 2 failed: ${err2.message}`);
+      }
     }
   }
 
@@ -568,6 +633,13 @@ bot.on("message", async (msg) => {
     const sendOptions = { reply_to_message_id: msg.message_id, parse_mode: "HTML" };
     if (msg.message_thread_id) sendOptions.message_thread_id = msg.message_thread_id;
     bot.sendMessage(msg.chat.id, reply, sendOptions).catch(err => console.error("sendMessage error:", err.message));
+  } else if (lastError) {
+    // Previously the bot just went silent here, which looks broken with no explanation.
+    // Tell the user something went wrong instead of leaving them hanging.
+    const sendOptions = { reply_to_message_id: msg.message_id };
+    if (msg.message_thread_id) sendOptions.message_thread_id = msg.message_thread_id;
+    bot.sendMessage(msg.chat.id, "Секунду, у меня сейчас техническая заминка — попробуй написать ещё раз через пару минут 🙏", sendOptions)
+      .catch(err => console.error("fallback sendMessage error:", err.message));
   }
 });
 const PORT = process.env.PORT || 3000;
